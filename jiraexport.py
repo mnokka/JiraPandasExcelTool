@@ -1,18 +1,21 @@
 #
-#
+# skipped Pandas and using tradional excel reading lib: import openpyxl 
 #
 
 
 from jira import JIRA
 from datetime import datetime
 import logging as log
-import pandas
+#import pandas 
 import argparse
 import getpass
 import time
 import sys, logging
 from author import Authenticate  # no need to use as external command
 from author import DoJIRAStuff
+import openpyxl 
+from collections import defaultdict
+import re
 
 start = time.clock()
 __version__ = u"0.1.RISKS" 
@@ -79,41 +82,173 @@ def main():
         parser.print_help()
         print "args: {0}".format(args)
         sys.exit(2)
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
     
     
     Authenticate(JIRASERVICE,PSWD,USER)
     jira=DoJIRAStuff(USER,PSWD,JIRASERVICE)
     
+    excel=excelfilepath+"/"+filename
+    logging.debug ("Excel file:{0}".format(excel))
+
+    Issues=defaultdict(dict) 
+    MainSheet="Sheet0" 
+    wb= openpyxl.load_workbook(excel)
+    #types=type(wb)
+    #logging.debug ("Type:{0}".format(types))
+    #sheets=wb.get_sheet_names()
+    #logging.debug ("Sheets:{0}".format(sheets))
+    CurrentSheet=wb[MainSheet] 
     
+    
+     ########################################
+    #CONFIGURATIONS AND EXCEL COLUMN MAPPINGS, both main and subtask excel
+    DATASTARTSROW=4 # data section starting line 
+    A=1 #issuetype
+    E=5 #SUMMARY
+    F=6 #priority
+    H=8 #Status   
+    Q=17 #Assignee
+    S=19 #Disciopline(F)
+    
+    T=20 #Probability
+    U=21 #HSE Impact
+    V=22 #Schedule Impact 
+    W=23 #Quality Impact
+    
+    Z=26 #Risk Cost
+    AK=37 #Linked Issues
+    AM=39 ##Disciopline(RM)
+    
+ 
+    ##############################################################################################
+    #Go through main excel sheet for main issue keys (and contents findings)
+    # Create dictionary structure (remarks)
+    # NOTE: Uses hardcoded sheet/column values
+    # NOTE: As this handles first sheet, using used row/cell reading (buggy, works only for first sheet) 
+    #
+    i=DATASTARTSROW # brute force row indexing
+    for row in CurrentSheet[('C{}:C{}'.format(DATASTARTSROW,CurrentSheet.max_row))]:  # go trough all column C  rows (issue key when imp exp eported)
+        for mycell in row:
+            KEY=mycell.value
+            logging.debug("ROW:{0} Original ID:{1}".format(i,mycell.value))
+            Issues[KEY]={} # add to dictionary as master key (KEY)
+            
+            #Just hardocode operations, POC is one off
+            #LINKED_ISSUES=(CurrentSheet.cell(row=i, column=K).value) #NOTE THIS APPROACH GOES ALWAYS TO THE FIRST SHEET
+            #logging.debug("Attachment:{0}".format((CurrentSheet.cell(row=i, column=K).value))) # for the same row, show also column K (LINKED_ISSUES) values
+            #Issues[KEY]["LINKED_ISSUES"] = LINKED_ISSUES
+            
+            SUMMARY=(CurrentSheet.cell(row=i, column=E).value)
+            if not SUMMARY:
+                SUMMARY="Summary for this task has not been defined"
+            Issues[KEY]["SUMMARY"] = SUMMARY
+            
+            ISSUE_TYPE=(CurrentSheet.cell(row=i, column=A).value)
+            Issues[KEY]["ISSUE_TYPE"] = ISSUE_TYPE
+            
+            STATUS=(CurrentSheet.cell(row=i, column=E).value)
+            Issues[KEY]["SUMMARY"] = SUMMARY
+            
+            PRIORITY=(CurrentSheet.cell(row=i, column=F).value)
+            Issues[KEY]["PRIORITY"] = PRIORITY
+            
+            STATUS=(CurrentSheet.cell(row=i, column=H).value)
+            Issues[KEY]["STATUS"] = STATUS
+            
+            
+            ASSIGNEE=(CurrentSheet.cell(row=i, column=Q).value)
+            Issues[KEY]["ASSIGNEE"] = ASSIGNEE
+            
+            DisciplineF=(CurrentSheet.cell(row=i, column=S).value)
+            Issues[KEY]["DisciplineF"] = DisciplineF
+            
+            DisciplineRM=(CurrentSheet.cell(row=i, column=AM).value)
+            Issues[KEY]["DisciplineRM"] = DisciplineRM
+            
+            PROBABILITY=(CurrentSheet.cell(row=i, column=T).value)
+            Issues[KEY]["PROBABILITY"] = PROBABILITY
+            
+            HSEImpact=(CurrentSheet.cell(row=i, column=U).value)
+            Issues[KEY]["HSEImpact"] = HSEImpact
+            
+              
+            #RESPHONE=(CurrentSheet.cell(row=i, column=U).value)
+            #Issues[KEY]["RESPHONE"] = RESPHONE
+            
+            SheduleImpact=(CurrentSheet.cell(row=i, column=V).value)
+            Issues[KEY]["SheduleImpact"] = SheduleImpact
+            
+            QualityImpact=(CurrentSheet.cell(row=i, column=W).value)
+            Issues[KEY]["QualityImpact"] = QualityImpact
+            
+            RiskCost=(CurrentSheet.cell(row=i, column=Z).value)
+            Issues[KEY]["RiskCost"] = RiskCost
+        
+            
+                
+            LinkedIssues=(CurrentSheet.cell(row=i, column=AK).value)
+            Issues[KEY]["LinkedIssues"] = LinkedIssues
+            
+            
+
+            logging.debug("---------------------------------------------------")
+            i=i+1
+    #print Issues
+    print Issues.items() 
+    
+    
+    for key, value in Issues.iteritems() :
+        print "************************************************************************"
+        print key, value
+    
+    print "......................................."
+    print "INV91649RM-18"
+    print Issues.get("INV91649RM-18")
+    
+    one=Issues.get("INV91649RM-18")
+    for key, value in one.iteritems() :
+        print "************************************************************************"
+        print key, value
+        print
+        if (key=="LinkedIssues"):
+            print "linked issues found"
+            onelink=value.split(':')
+            for item in onelink :
+                print "value:{0}".format(item)
+                regex = r"(.*)(')(.*)(')"   #TT1400-39 'Logistic plan to do' (Risk Mitigation)
+                match = re.search(regex, item)
+                
+                if (match):
+                    hit=match.group(3)
+                    print "cccccc"
+                    print "Linked issue Summmary: {0}".format(hit)
+                    print "cccccc"
+                
+    
+    end = time.clock()
+    totaltime=end-start
+    print "Time taken:{0} seconds".format(totaltime)
+       
+            
+    print "*************************************************************************"
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+       
     sys.exit(0)
     return
     
-    #
-    log.basicConfig(filename='update-duedate.log',level=log.INFO)
-
-    JQL_multiple = []
-    JQL_none = []
-
-    args = parse_arguments()
-    excel_file = args.excel_file
-    jira_url = args.jira_url
-    username = args.username
-    password = getpass.getpass()
-
-    jira = JIRA(server=jira_url, basic_auth=(username, password))
-
+    
     # Local test to check notifications
     """
     issue_list = jira.search_issues("Summary ~ 'Component'")
