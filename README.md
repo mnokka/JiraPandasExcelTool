@@ -1,5 +1,5 @@
 # JiraPandasExcelTool
-Create Jira issues from Excel , using Pandas, with possibilitiy to add links to existing issues
+Create Jira issues from Excel , using Pandas, with possibility to add links to existing issues
 
 
 Source Jira --> Target Jira issue copying:
