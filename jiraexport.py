@@ -218,7 +218,7 @@ def main():
             print "{0} {1}".format(key,castedValue)
             
             
-            if (LINKS and key=="LinkedIssues"): #-l parameter to do links operations
+            if (LINKS and key=="LinkedIssues"): #-l parameter to do links operations to given target project
                 #print "Linked issues column found"
                 
                 print "Linking active: Linking target project: {0}".format(LINKS)
@@ -238,6 +238,28 @@ def main():
                         #print "-----------------------------------------------------------"
                         print "Linked issue Summmary ==>  {0}".format(hit.encode('utf-8'))
                         #print "-----------------------------------------------------------"
+                        
+                        #project = "Risk Mitigation Panel Line"  and summary ~ "Kuitulaser hankinta ja hitsauslaboratorion hankinta"
+                        #issue_list = jira.search_issues("Project = {0} and Summary ~ {1}".format(LINKS,hit))
+                        
+                        jql_query="Project = \'{0}\' and Summary ~ \'{1}\'".format(LINKS,hit.encode('utf-8'))
+                        print "Query:{0}".format(jql_query)
+                        
+                        issue_list=jira.search_issues(jql_query)
+                        
+                        if len(issue_list) == 1:
+                            for issue in issue_list:
+                                logging.debug("One issue returned for query")
+                                logging.debug("ISSUE: {0}".format(issue))
+                
+                        elif len(issue_list) > 1:
+                            logging.debug("More than 1 issue was returned by JQL query")
+                            
+                
+                        else:
+                            logging.debug("No issue(s) returned by JQL query")
+                            
+                        time.sleep(0.7)
                 
             if (key=="ASSIGNEE"):
                 print "Assignee column found"
@@ -288,6 +310,21 @@ def main():
                         print "-----------------------------------------------------------"
                         print "Linked issue Summmary: {0}".format(hit)
                         print "-----------------------------------------------------------"
+                                        
+                        #project = "Risk Mitigation Panel Line"  and summary ~ "Kuitulaser hankinta ja hitsauslaboratorion hankinta"
+                        issue_list = jira.search_issues("Project = {0} and Summary ~ {1}".format(LINKS,hit))
+                        if len(issue_list) == 1:
+                            for issue in issue_list:
+                                logging.debug("One issue returned for query")
+                
+                        elif len(issue_list) > 1:
+                            logging.debug("More than 1 issue was returned by JQL query")
+                            
+                
+                        else:
+                            logging.debug("No issue(s) returned by JQL query")
+                            
+                        time.sleep(0.7)
                     
     
     end = time.clock()
@@ -344,18 +381,18 @@ def main():
                 update_issue_duedate(issue, new_duedate)
 
         elif len(issue_list) > 1:
-            log.info("More than 1 issue was returned by JQL query: {0}".format(document_number))
+            logging.info("More than 1 issue was returned by JQL query: {0}".format(document_number))
             JQL_multiple.append(document_number)
 
         else:
-            log.info("No issue(s) returned by JQL query: {0}".format(document_number))
+            logging.info("No issue(s) returned by JQL query: {0}".format(document_number))
             JQL_none.append(document_number)
 
         time.sleep(0.7)
 
-    log.info("Count of document numbers that returned more than one issue: {0}".format(len(JQL_multiple)))
+    logging.info("Count of document numbers that returned more than one issue: {0}".format(len(JQL_multiple)))
     for doc_num in JQL_multiple:
-        log.info(doc_num)
+        logging.info(doc_num)
     log.info("Count of document numbers that returned no issues: {0}".format(len(JQL_none)))
     for doc_num in JQL_none:
         log.info(doc_num)
