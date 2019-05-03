@@ -56,6 +56,7 @@ def main():
     parser.add_argument('-w','--password', help='<JIRA password>')
     parser.add_argument('-u','--user', help='<JIRA user>')
     parser.add_argument('-s','--service', help='<JIRA service>')
+    parser.add_argument('-l','--links', help='<Target Jira project to which issues to be linked>') #add issue links to generated issues (target "into" linked issues must be allready in target jira)
     #parser.add_argument('-p','--project', help='<JIRA project>')
     #parser.add_argument('-z','--rename', help='<rename files>') #adhoc operation activation
     #parser.add_argument('-x','--ascii', help='<ascii file names>') #adhoc operation activation
@@ -74,6 +75,7 @@ def main():
     #JIRAPROJECT = args.project or ''
     PSWD= args.password or ''
     USER= args.user or ''
+    LINKS=args.links or ''
     #RENAME= args.rename or ''
     #ASCII=args.ascii or ''
     
@@ -206,7 +208,6 @@ def main():
         # check linked issues values form each issue found from excel
         one=Issues.get(key)
         for key, value in one.iteritems() :
-            #print
             print "************************************************************************"
             if (value==None):
                 castedValue=""
@@ -216,9 +217,11 @@ def main():
             
             print "{0} {1}".format(key,castedValue)
             
-            if (key=="LinkedIssues"):
-                print "Linked issues column found"
+            
+            if (LINKS and key=="LinkedIssues"): #-l parameter to do links operations
+                #print "Linked issues column found"
                 
+                print "Linking active: Linking target project: {0}".format(LINKS)
                 if (value==None): #no linked items case
                     value2="NONE"
                     print "No linked issues found"
@@ -253,6 +256,8 @@ def main():
                         print "Assignee username ==>  {0}".format(hit.encode('utf-8'))
                         #print "-----------------------------------------------------------"
         print "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    #now excel has been prosessed
+        
     # test all with one item
     TESTING=0
     if (TESTING):
