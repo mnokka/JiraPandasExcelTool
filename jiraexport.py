@@ -199,20 +199,61 @@ def main():
     
     
     for key, value in Issues.iteritems() :
-        print "************************************************************************"
-        print key, value
-    
-    print "......................................."
+        #print "************************************************************************"
+        #print key, value
+        
+        # check linked issues values form each issue found from excel
+        one=Issues.get(key)
+        for key, value in one.iteritems() :
+            print "************************************************************************"
+            if (value==None):
+                castedValue=""
+                print "NONE"
+            else:
+                castedValue=value.encode('utf-8')
+            
+            print "{0} {1}".format(key,castedValue)
+            print
+            if (key=="LinkedIssues"):
+                print "Linked issues column found"
+                
+                if (value==None): #no linked items case
+                    value2="NONE"
+                    print "No linked issues found"
+                else:
+                    value2=value
+                onelink=value2.split(':')
+                for item in onelink :
+                    #print "value:{0}".format(item.encode('utf-8'))
+                    regex = r"(.*)(')(.*)(')"   #TT1400-39 'Logistic plan to do' (Risk Mitigation)
+                    match = re.search(regex, item)
+                
+                    if (match):
+                        hit=match.group(3)
+                        print "-----------------------------------------------------------"
+                        print "Linked issue Summmary: {0}".format(hit.encode('utf-8'))
+                        print "-----------------------------------------------------------"
+                
+   
+   
+   
+    # test all with one item
+    print "TESTTESTETESTTESTETE ------------------------------ TESTETRSTESTS"
     print "INV91649RM-18"
     print Issues.get("INV91649RM-18")
     
     one=Issues.get("INV91649RM-18")
     for key, value in one.iteritems() :
         print "************************************************************************"
-        print key, value
+        if (value==None):
+                castedValue=""
+                print "NONE"
+        else:
+                castedValue=value.encode('utf-8')
+        print "{0} {1}".format(key,castedValue)
         print
         if (key=="LinkedIssues"):
-            print "linked issues found"
+            print "Linked issues found"
             onelink=value.split(':')
             for item in onelink :
                 print "value:{0}".format(item)
@@ -221,9 +262,9 @@ def main():
                 
                 if (match):
                     hit=match.group(3)
-                    print "cccccc"
+                    print "-----------------------------------------------------------"
                     print "Linked issue Summmary: {0}".format(hit)
-                    print "cccccc"
+                    print "-----------------------------------------------------------"
                 
     
     end = time.clock()
