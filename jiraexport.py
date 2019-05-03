@@ -194,17 +194,19 @@ def main():
 
             logging.debug("---------------------------------------------------")
             i=i+1
-    #print Issues
-    print Issues.items() 
+    
+    #print Issues.items() 
     
     
     for key, value in Issues.iteritems() :
-        #print "************************************************************************"
+        print "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        print "KEY: {0}".format(key)
         #print key, value
         
         # check linked issues values form each issue found from excel
         one=Issues.get(key)
         for key, value in one.iteritems() :
+            #print
             print "************************************************************************"
             if (value==None):
                 castedValue=""
@@ -213,7 +215,7 @@ def main():
                 castedValue=value.encode('utf-8')
             
             print "{0} {1}".format(key,castedValue)
-            print
+            
             if (key=="LinkedIssues"):
                 print "Linked issues column found"
                 
@@ -230,42 +232,58 @@ def main():
                 
                     if (match):
                         hit=match.group(3)
-                        print "-----------------------------------------------------------"
-                        print "Linked issue Summmary: {0}".format(hit.encode('utf-8'))
-                        print "-----------------------------------------------------------"
+                        #print "-----------------------------------------------------------"
+                        print "Linked issue Summmary ==>  {0}".format(hit.encode('utf-8'))
+                        #print "-----------------------------------------------------------"
                 
-   
-   
-   
+            if (key=="ASSIGNEE"):
+                print "Assignee column found"
+                
+                if (value==None): #no linked items case
+                    value2="NONE"
+                    print "No assignee found"
+                else:
+                    value2=value
+                    regex = r"(.*)(\()(.*)(\))"   #Korpela, Matias (korpma11)
+                    match = re.search(regex, value2)
+                
+                    if (match):
+                        hit=match.group(3)
+                        #print "-----------------------------------------------------------"
+                        print "Assignee username ==>  {0}".format(hit.encode('utf-8'))
+                        #print "-----------------------------------------------------------"
+        print "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
     # test all with one item
-    print "TESTTESTETESTTESTETE ------------------------------ TESTETRSTESTS"
-    print "INV91649RM-18"
-    print Issues.get("INV91649RM-18")
-    
-    one=Issues.get("INV91649RM-18")
-    for key, value in one.iteritems() :
-        print "************************************************************************"
-        if (value==None):
-                castedValue=""
-                print "NONE"
-        else:
-                castedValue=value.encode('utf-8')
-        print "{0} {1}".format(key,castedValue)
-        print
-        if (key=="LinkedIssues"):
-            print "Linked issues found"
-            onelink=value.split(':')
-            for item in onelink :
-                print "value:{0}".format(item)
-                regex = r"(.*)(')(.*)(')"   #TT1400-39 'Logistic plan to do' (Risk Mitigation)
-                match = re.search(regex, item)
-                
-                if (match):
-                    hit=match.group(3)
-                    print "-----------------------------------------------------------"
-                    print "Linked issue Summmary: {0}".format(hit)
-                    print "-----------------------------------------------------------"
-                
+    TESTING=0
+    if (TESTING):
+        print "TESTTESTETESTTESTETE ------------------------------ TESTETRSTESTS"
+        print "INV91649RM-18"
+        print Issues.get("INV91649RM-18")
+        
+        one=Issues.get("INV91649RM-18")
+        for key, value in one.iteritems() :
+            print "************************************************************************"
+            if (value==None):
+                    castedValue=""
+                    print "NONE"
+            else:
+                    castedValue=value.encode('utf-8')
+            print "{0} {1}".format(key,castedValue)
+            print
+            if (key=="LinkedIssues"):
+                print "Linked issues found"
+                onelink=value.split(':')
+                for item in onelink :
+                    print "value:{0}".format(item)
+                    regex = r"(.*)(')(.*)(')"   #TT1400-39 'Logistic plan to do' (Risk Mitigation)
+                    match = re.search(regex, item)
+                    
+                    if (match):
+                        hit=match.group(3)
+                        print "-----------------------------------------------------------"
+                        print "Linked issue Summmary: {0}".format(hit)
+                        print "-----------------------------------------------------------"
+                    
     
     end = time.clock()
     totaltime=end-start
