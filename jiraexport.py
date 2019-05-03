@@ -57,7 +57,7 @@ def main():
     parser.add_argument('-u','--user', help='<JIRA user>')
     parser.add_argument('-s','--service', help='<JIRA service>')
     parser.add_argument('-l','--links', help='<Target Jira project to which issues to be linked>') #add issue links to generated issues (target "into" linked issues must be allready in target jira)
-    #parser.add_argument('-p','--project', help='<JIRA project>')
+    parser.add_argument('-p','--project', help='<Target JIRA project to be created>')
     #parser.add_argument('-z','--rename', help='<rename files>') #adhoc operation activation
     #parser.add_argument('-x','--ascii', help='<ascii file names>') #adhoc operation activation
         
@@ -72,7 +72,7 @@ def main():
     filename = args.filename or ''
     
     JIRASERVICE = args.service or ''
-    #JIRAPROJECT = args.project or ''
+    JIRAPROJECT = args.project or ''
     PSWD= args.password or ''
     USER= args.user or ''
     LINKS=args.links or ''
@@ -80,7 +80,7 @@ def main():
     #ASCII=args.ascii or ''
     
     # quick old-school way to check needed parameters
-    if (JIRASERVICE=='' or PSWD=='' or USER==''  or excelfilepath=='' or filename==''):
+    if (JIRASERVICE=='' or PSWD=='' or USER==''  or excelfilepath=='' or JIRAPROJECT=='' or filename==''):
         parser.print_help()
         print "args: {0}".format(args)
         sys.exit(2)
@@ -121,6 +121,8 @@ def main():
     Z=26 #Risk Cost
     AK=37 #Linked Issues
     AM=39 ##Disciopline(RM)
+    AN=40 #Description
+    AB=28 #Mitigation Costs (Keur)
     
  
     ##############################################################################################
@@ -168,6 +170,9 @@ def main():
             DisciplineRM=(CurrentSheet.cell(row=i, column=AM).value)
             Issues[KEY]["DisciplineRM"] = DisciplineRM
             
+            DESCRIPTION=(CurrentSheet.cell(row=i, column=AN).value)
+            Issues[KEY]["DESCRIPTION"] = DESCRIPTION
+            
             PROBABILITY=(CurrentSheet.cell(row=i, column=T).value)
             Issues[KEY]["PROBABILITY"] = PROBABILITY
             
@@ -187,7 +192,9 @@ def main():
             RiskCost=(CurrentSheet.cell(row=i, column=Z).value)
             Issues[KEY]["RiskCost"] = RiskCost
         
-            
+            MitigationCostsKeur=(CurrentSheet.cell(row=i, column=AB).value)
+            Issues[KEY]["MitigationCostsKeur"] = MitigationCostsKeur
+        
                 
             LinkedIssues=(CurrentSheet.cell(row=i, column=AK).value)
             Issues[KEY]["LinkedIssues"] = LinkedIssues
@@ -243,21 +250,19 @@ def main():
                         #issue_list = jira.search_issues("Project = {0} and Summary ~ {1}".format(LINKS,hit))
                         
                         jql_query="Project = \'{0}\' and Summary ~ \'{1}\'".format(LINKS,hit.encode('utf-8'))
-                        print "Query:{0}".format(jql_query)
+                        #print "Query:{0}".format(jql_query)
                         
                         issue_list=jira.search_issues(jql_query)
                         
                         if len(issue_list) == 1:
                             for issue in issue_list:
-                                logging.debug("One issue returned for query")
-                                logging.debug("ISSUE: {0}".format(issue))
+                                #logging.debug("One issue returned for query")
+                                logging.debug("ISSUE TO BE LINKED ==> {0}".format(issue))
                 
                         elif len(issue_list) > 1:
-                            logging.debug("More than 1 issue was returned by JQL query")
-                            
-                
+                            logging.debug("ERROR ==> More than 1 issue was returned by JQL query")
                         else:
-                            logging.debug("No issue(s) returned by JQL query")
+                            logging.debug("==> No issue(s) returned by JQL query")
                             
                         time.sleep(0.7)
                 
@@ -273,10 +278,15 @@ def main():
                     match = re.search(regex, value2)
                 
                     if (match):
-                        hit=match.group(3)
+                        USERNAME_ASSIGNEE=match.group(3).encode('utf-8')
                         #print "-----------------------------------------------------------"
-                        print "Assignee username ==>  {0}".format(hit.encode('utf-8'))
+                        print "Assignee username ==>  {0}".format(USERNAME_ASSIGNEE)
                         #print "-----------------------------------------------------------"
+                    else:
+                        USERNAME_ASSIGNEE="None"
+            
+        CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur)
+        sys.exit(5)
         print "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
     #now excel has been prosessed
         
@@ -334,79 +344,55 @@ def main():
             
     print "*************************************************************************"
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
        
     sys.exit(0)
-    return
     
     
-    # Local test to check notifications
-    """
-    issue_list = jira.search_issues("Summary ~ 'Component'")
-    for issue in issue_list:
-        issue.update(duedate="2019-10-10")
-    """
-    df = pandas.read_excel(excel_file)
+def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur):
+    jiraobj=jira
+    project=JIRAPROJECT
+    TASKTYPE="Task" #hardcoded
 
-    # HELPER FUNCTIONS
-    #
-    def update_issue_duedate(issue, new_duedate):
-        issue.update(duedate=new_duedate)
-        log.info("ISSUE: {0}, {1}, {2} | New due date: {3}".format(issue.key, issue.fields.summary, issue.fields.customfield_10019, new_duedate))
-
-    # MAIN()
-    #
-    log.info("Starting update-duedate.py - {0}".format(datetime.now()))
-    log.info("Jira: {0}".format(jira_url))
-    log.info("Excel parsing:")
+    #'resolution': STATUS,
     
-    for index, row in df.iterrows():
-        document_number = row['Document Number']
-        new_duedate = row['Due date'].to_pydatetime().isoformat()
-
-        # Drawing Number == cf[10019]
-        issue_list = jira.search_issues("'Drawing Number' ~ '{0}'".format(document_number))
-        if len(issue_list) == 1:
-            for issue in issue_list:
-                update_issue_duedate(issue, new_duedate)
-
-        elif len(issue_list) > 1:
-            logging.info("More than 1 issue was returned by JQL query: {0}".format(document_number))
-            JQL_multiple.append(document_number)
-
-        else:
-            logging.info("No issue(s) returned by JQL query: {0}".format(document_number))
-            JQL_none.append(document_number)
-
-        time.sleep(0.7)
-
-    logging.info("Count of document numbers that returned more than one issue: {0}".format(len(JQL_multiple)))
-    for doc_num in JQL_multiple:
-        logging.info(doc_num)
-    log.info("Count of document numbers that returned no issues: {0}".format(len(JQL_none)))
-    for doc_num in JQL_none:
-        log.info(doc_num)
-
-    log.info("Stopped update-duedate.py - {0}".format(datetime.now()))
+    print "Creating mitigation issue for JIRA project: {0}".format(project)
     
+    MitigationCostsKeur=1
+    
+    issue_dict = {
+    'project': {'key': JIRAPROJECT},
+    'summary': SUMMARY,
+    'description': DESCRIPTION,
+    'issuetype': {'name': TASKTYPE},
+    #'priority': PRIORITY,
+    #'priority':{'id': '10001'}
+    #'resolution':{'id': '10100'},
+    #'assignee': USERNAME_ASSIGNEE,
+    'customfield_14302': int(MitigationCostsKeur),  # MitigationCostsKeur dev: 14302 
+    #'customfield_14216': str(MitigationCostsKeur),  # MitigationCostsKeur prod: 14216
 
-def parse_arguments():
-    parser = argparse.ArgumentParser(description='')
-    parser.add_argument("--jira-url", required=True)
-    parser.add_argument("--excel-file", required=True)
-    parser.add_argument("--username", required=True)
+    }
 
-    return parser.parse_args()
-
+    try:
+        new_issue = jiraobj.create_issue(fields=issue_dict)
+        print "Issue created OK"
+    except Exception,e:
+        print("Failed to create JIRA object, error: %s" % e)
+        sys.exit(1)
+    return new_issue    
+    
+     
+ 
+    
+    
 if __name__ == '__main__':
     main()
+    
+    
+    
+    
+
+    
+    
+    
