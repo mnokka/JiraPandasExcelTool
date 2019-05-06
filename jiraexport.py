@@ -217,8 +217,12 @@ def main():
         for key, value in one.iteritems() :
             print "************************************************************************"
             if (value==None):
-                castedValue=""
-                print "NONE"
+                if (isinstance(value, long)):
+                    castedValue=0
+                    print "NONE NUMBER"
+                else:
+                    castedValue=0
+                    print "NONE" 
             else:
                 if (isinstance(value, long)): # is it number??
                     castedValue=value # numbers dont need utf-8 endocing
@@ -275,6 +279,7 @@ def main():
                 if (value==None): #no linked items case
                     value2="NONE"
                     print "No assignee found"
+                    USERNAME_ASSIGNEE="-1"
                 else:
                     value2=value
                     regex = r"(.*)(\()(.*)(\))"   #Korpela, Matias (korpma11)
@@ -286,12 +291,12 @@ def main():
                         print "Assignee username ==>  {0}".format(USERNAME_ASSIGNEE)
                         #print "-----------------------------------------------------------"
                     else:
-                        USERNAME_ASSIGNEE="None"
+                        USERNAME_ASSIGNEE="-1"
                         
                 
             if (key=="MitigationCostsKeur"):
                 print "Mitigation cost column found"
-                MitigationCostsKeur=value
+                MitigationCostsKeur=castedValue
                        
                         
                         
@@ -391,8 +396,6 @@ def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,US
     try:
         new_issue = jiraobj.create_issue(fields=issue_dict)
         print "Issue created OK"
-        
-        #new_issue.assign_issue(new_issue, USERNAME_ASSIGNEE)
         
         
     except Exception,e:
