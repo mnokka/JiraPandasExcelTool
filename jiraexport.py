@@ -21,8 +21,8 @@ start = time.clock()
 __version__ = u"0.1.RISKS" 
 
 # should pass via parameters
-#ENV="demo"
-ENV=u"PROD"
+ENV="DEV"
+#ENV=u"PROD"
 
 logging.basicConfig(level=logging.DEBUG) # IF calling from Groovy, this must be set logging level DEBUG in Groovy side order these to be written out
 
@@ -220,7 +220,10 @@ def main():
                 castedValue=""
                 print "NONE"
             else:
-                castedValue=value.encode('utf-8')
+                if (isinstance(value, long)): # is it number??
+                    castedValue=value # numbers dont need utf-8 endocing
+                else:
+                    castedValue=value.encode('utf-8')   
             
             print "{0} {1}".format(key,castedValue)
             
@@ -284,6 +287,14 @@ def main():
                         #print "-----------------------------------------------------------"
                     else:
                         USERNAME_ASSIGNEE="None"
+                        
+                
+            if (key=="MitigationCostsKeur"):
+                print "Mitigation cost column found"
+                MitigationCostsKeur=value
+                       
+                        
+                        
             
         CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur)
         sys.exit(5) #testinf do once
@@ -350,28 +361,30 @@ def main():
     
     
 def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur):
+    
+    
+    
     jiraobj=jira
     project=JIRAPROJECT
     TASKTYPE="Task" #hardcoded
 
     #'resolution': STATUS,
+    #dev low =10002, high=10000, medium=10001
     
     print "Creating mitigation issue for JIRA project: {0}".format(project)
     
-    MitigationCostsKeur=1
     
     issue_dict = {
     'project': {'key': JIRAPROJECT},
     'summary': SUMMARY,
     'description': DESCRIPTION,
     'issuetype': {'name': TASKTYPE},
-    #'priority': PRIORITY,
-    #'priority':{'id': '10001'}
+    'priority': {'name': PRIORITY }, 
     #'resolution':{'id': '10100'},
     'assignee': {'name':USERNAME_ASSIGNEE},
+    
+    'customfield_14302' if (ENV =="DEV") else 'customfield_14216' : int(MitigationCostsKeur),  # MitigationCostsKeur dev: 14302  prod: 14216
 
-    'customfield_14302': int(MitigationCostsKeur),  # MitigationCostsKeur dev: 14302 
-    #'customfield_14216': str(MitigationCostsKeur),  # MitigationCostsKeur prod: 14216
 
     }
 
