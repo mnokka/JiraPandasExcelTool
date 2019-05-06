@@ -286,7 +286,7 @@ def main():
                         USERNAME_ASSIGNEE="None"
             
         CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur)
-        sys.exit(5)
+        sys.exit(5) #testinf do once
         print "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
     #now excel has been prosessed
         
@@ -368,7 +368,8 @@ def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,US
     #'priority': PRIORITY,
     #'priority':{'id': '10001'}
     #'resolution':{'id': '10100'},
-    #'assignee': USERNAME_ASSIGNEE,
+    'assignee': {'name':USERNAME_ASSIGNEE},
+
     'customfield_14302': int(MitigationCostsKeur),  # MitigationCostsKeur dev: 14302 
     #'customfield_14216': str(MitigationCostsKeur),  # MitigationCostsKeur prod: 14216
 
@@ -377,6 +378,10 @@ def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,US
     try:
         new_issue = jiraobj.create_issue(fields=issue_dict)
         print "Issue created OK"
+        
+        #new_issue.assign_issue(new_issue, USERNAME_ASSIGNEE)
+        
+        
     except Exception,e:
         print("Failed to create JIRA object, error: %s" % e)
         sys.exit(1)
