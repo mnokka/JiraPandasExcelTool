@@ -1,6 +1,9 @@
 #
 # skipped Pandas and using tradional excel reading lib: import openpyxl 
 #
+# Jira Exp/Imp used to export excel with all field information
+# This utility ut use excel info to move issue data (fields) to another project in another Jira
+# 
 
 
 from jira import JIRA
@@ -44,20 +47,22 @@ def main():
     USAGE:
     -filepath  | -p <Path to Excel file directory>
     -filename   | -n <Excel filename>
+    TODO ADD DESCR
+    PLEASE SEE THE CODE
 
     """.format(__version__,sys.argv[0]))
 
     #parser.add_argument('-f','--filepath', help='<Path to attachment directory>')
     parser.add_argument('-q','--excelfilepath', help='<Path to excel directory>')
-    parser.add_argument('-n','--filename', help='<Excel filename>')
+    parser.add_argument('-n','--filename', help='<Issues excel filename>')
     
     parser.add_argument('-v','--version', help='<Version>', action='store_true')
     
     parser.add_argument('-w','--password', help='<JIRA password>')
-    parser.add_argument('-u','--user', help='<JIRA user>')
-    parser.add_argument('-s','--service', help='<JIRA service>')
-    parser.add_argument('-l','--links', help='<Target Jira project to which issues to be linked>') #add issue links to generated issues (target "into" linked issues must be allready in target jira)
-    parser.add_argument('-p','--project', help='<Target JIRA project to be created>')
+    parser.add_argument('-u','--user', help='<JIRA username>')
+    parser.add_argument('-s','--service', help='<JIRA service, like https://my.jira.com>')
+    parser.add_argument('-l','--links', help='<Target Jira project ID to which these issues to be linked, if link info (linked issue summary) excel>') #add issue links to generated issues (target "into" linked issues must be allready in target jira)
+    parser.add_argument('-p','--project', help='<Target JIRA project ID to be used>')
     #parser.add_argument('-z','--rename', help='<rename files>') #adhoc operation activation
     #parser.add_argument('-x','--ascii', help='<ascii file names>') #adhoc operation activation
         
@@ -305,9 +310,9 @@ def main():
             if (key=="STATUS"):
                 #print "STATUS cost column found: {0}".format(value)
                 if (ENV =="DEV"):
-                    if (value=="ToDo"):
-                        print "Dev: ToDo found, doing nothing"
-                        NEWSTATUS="Todo"
+                    if (value=="To Do"):
+                        print "Dev: To Do found, doing nothing"
+                        NEWSTATUS="To Do"
                     else:
                         NEWSTATUS=value  
                         print "Dev: new status set:{0}".format(NEWSTATUS)
@@ -371,7 +376,7 @@ def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,US
     try:
         new_issue = jiraobj.create_issue(fields=issue_dict)
         print "===> Issue created OK:{0}".format(new_issue)
-        if (NEWSTATUS != "Todo"): # status after cretion
+        if (NEWSTATUS != "To Do"): # status after cretion
             
             #map state to transit for Mitigation issues
             if (NEWSTATUS=="In Progress"):
