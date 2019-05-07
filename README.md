@@ -1,13 +1,14 @@
 # JiraPandasExcelTool
-Create Jira issues from Excel , using Pandas, with possibility to add links to existing issues
+Create Jira issues from Excel , using ~~Pandas~~ (openpyxl), with possibility to add links to existing issues in another project
 
 
 Source Jira --> Target Jira issue copying:
 
 * Excel defines custom fields for to be created Jira issue, including linked issues info
+(Jira Imp/Exp plugin used to produce exported excel)
 
-* Tool can add linked issues Summary (as reference for later usage) for excel based on links in source Jira
 
-* When executed in create mode, issues are created for target Jira. Any found existing issues (target Jira) based
-on added ( source Jira) summary field are being linked using given link type (of course these to be linked issues must have been copied earlier to target Jira)
+* Tool can check if existing project has excels linked issue info (issue summary) and do the linking (hardcoded link names)
+
+* Thus copy first target project issues, then "linking project" issues using -l option
 
