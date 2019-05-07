@@ -156,6 +156,8 @@ def main():
             
             PRIORITY=(CurrentSheet.cell(row=i, column=F).value)
             Issues[KEY]["PRIORITY"] = PRIORITY
+            print "priority after setting:{0}".format(str(PRIORITY))
+           
             
             STATUS=(CurrentSheet.cell(row=i, column=H).value)
             Issues[KEY]["STATUS"] = STATUS
@@ -205,8 +207,8 @@ def main():
             i=i+1
     
     #print Issues.items() 
-    
-    
+  
+    #print "priority after all settings:{0}".format(PRIORITY)  
     for key, value in Issues.iteritems() :
         print "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
         print "KEY: {0}".format(key)
@@ -227,10 +229,12 @@ def main():
                 if (isinstance(value, long)): # is it number??
                     castedValue=value # numbers dont need utf-8 endocing
                 else:
-                    castedValue=value.encode('utf-8')   
+                    castedValue=value.encode('utf-8') 
+                  
             
+            print "value:{0}".format(value)
             print "{0} {1}".format(key,castedValue)
-            
+            #print "priority in loop:{0}".format(PRIORITY)  
             
             if (LINKS and key=="LinkedIssues"): #-l parameter to do links operations to given target project
                 #print "Linked issues column found"
@@ -298,59 +302,28 @@ def main():
                 print "Mitigation cost column found"
                 MitigationCostsKeur=castedValue
                        
+            if (key=="STATUS"):
+                print "STATUS cost column found: {0}".format(value)
+                if (ENV =="DEV"):
+                    if (value=="To Do"):
+                        print "dev To Do found, doing nothing"
+                        NEWSTATUS="NA"
+                    else:
+                        NEWSTATUS=value  
+                        print "new status set:{0}".format(NEWSTATUS)
+                         
+                else:
+                    print "SET PROD STATUSES"        
+                    #TODO STATUSES"    
                         
-                        
-            
-        CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur)
+        print "priority before issue creation:{0}".format(str(PRIORITY))    
+        CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS)
+        time.sleep(0.7) # prevent jira crashing for script attack
         sys.exit(5) #testinf do once
         print "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
     #now excel has been prosessed
         
-    # test all with one item
-    TESTING=0
-    if (TESTING):
-        print "TESTTESTETESTTESTETE ------------------------------ TESTETRSTESTS"
-        print "INV91649RM-18"
-        print Issues.get("INV91649RM-18")
-        
-        one=Issues.get("INV91649RM-18")
-        for key, value in one.iteritems() :
-            print "************************************************************************"
-            if (value==None):
-                    castedValue=""
-                    print "NONE"
-            else:
-                    castedValue=value.encode('utf-8')
-            print "{0} {1}".format(key,castedValue)
-            print
-            if (key=="LinkedIssues"):
-                print "Linked issues found"
-                onelink=value.split(':')
-                for item in onelink :
-                    print "value:{0}".format(item)
-                    regex = r"(.*)(')(.*)(')"   #TT1400-39 'Logistic plan to do' (Risk Mitigation)
-                    match = re.search(regex, item)
-                    
-                    if (match):
-                        hit=match.group(3)
-                        print "-----------------------------------------------------------"
-                        print "Linked issue Summmary: {0}".format(hit)
-                        print "-----------------------------------------------------------"
-                                        
-                        #project = "Risk Mitigation Panel Line"  and summary ~ "Kuitulaser hankinta ja hitsauslaboratorion hankinta"
-                        issue_list = jira.search_issues("Project = {0} and Summary ~ {1}".format(LINKS,hit))
-                        if len(issue_list) == 1:
-                            for issue in issue_list:
-                                logging.debug("One issue returned for query")
-                
-                        elif len(issue_list) > 1:
-                            logging.debug("More than 1 issue was returned by JQL query")
-                            
-                
-                        else:
-                            logging.debug("No issue(s) returned by JQL query")
-                            
-                        time.sleep(0.7)
+    
                     
     
     end = time.clock()
@@ -365,7 +338,7 @@ def main():
     sys.exit(0)
     
     
-def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur):
+def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS):
     
     
     
@@ -373,18 +346,17 @@ def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,US
     project=JIRAPROJECT
     TASKTYPE="Task" #hardcoded
 
-    #'resolution': STATUS,
-    #dev low =10002, high=10000, medium=10001
+  
     
     print "Creating mitigation issue for JIRA project: {0}".format(project)
     
     
     issue_dict = {
     'project': {'key': JIRAPROJECT},
-    'summary': SUMMARY,
-    'description': DESCRIPTION,
+    'summary': str(SUMMARY),
+    'description': str(DESCRIPTION),
     'issuetype': {'name': TASKTYPE},
-    'priority': {'name': PRIORITY }, 
+    'priority': {'name': str(PRIORITY) }, 
     #'resolution':{'id': '10100'},
     'assignee': {'name':USERNAME_ASSIGNEE},
     
@@ -396,7 +368,8 @@ def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,US
     try:
         new_issue = jiraobj.create_issue(fields=issue_dict)
         print "Issue created OK"
-        
+        if (NEWSTATUS != "NA"):
+            jiraobj.transition_issue(new_issue, transition=NEWSTATUS)  # trantsit to state where it was in excel
         
     except Exception,e:
         print("Failed to create JIRA object, error: %s" % e)
