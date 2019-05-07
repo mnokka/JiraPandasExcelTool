@@ -103,7 +103,7 @@ def main():
     CurrentSheet=wb[MainSheet] 
     
     
-     ########################################
+    ########################################
     #CONFIGURATIONS AND EXCEL COLUMN MAPPINGS, both main and subtask excel
     DATASTARTSROW=4 # data section starting line 
     A=1 #issuetype
@@ -210,8 +210,8 @@ def main():
   
     #print "priority after all settings:{0}".format(PRIORITY)  
     for key, value in Issues.iteritems() :
-        print "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-        print "KEY: {0}".format(key)
+        print "\n\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+        print "ORIGINAL ISSUE KEY: {0}".format(key)
         #print key, value
         
         # check linked issues values form each issue found from excel
@@ -232,7 +232,7 @@ def main():
                     castedValue=value.encode('utf-8') 
                   
             
-            print "value:{0}".format(value)
+            #print "value:{0}".format(value)
             print "{0} {1}".format(key,castedValue)
             #print "priority in loop:{0}".format(PRIORITY)  
             
@@ -278,7 +278,7 @@ def main():
                         time.sleep(0.7)
                 
             if (key=="ASSIGNEE"):
-                print "Assignee column found"
+                #print "Assignee column found"
                 
                 if (value==None): #no linked items case
                     value2="NONE"
@@ -299,57 +299,63 @@ def main():
                         
                 
             if (key=="MitigationCostsKeur"):
-                print "Mitigation cost column found"
+                #print "Mitigation cost column found"
                 MitigationCostsKeur=castedValue
                        
             if (key=="STATUS"):
-                print "STATUS cost column found: {0}".format(value)
+                #print "STATUS cost column found: {0}".format(value)
                 if (ENV =="DEV"):
-                    if (value=="To Do"):
-                        print "dev To Do found, doing nothing"
-                        NEWSTATUS="NA"
+                    if (value=="ToDo"):
+                        print "Dev: ToDo found, doing nothing"
+                        NEWSTATUS="Todo"
                     else:
                         NEWSTATUS=value  
-                        print "new status set:{0}".format(NEWSTATUS)
+                        print "Dev: new status set:{0}".format(NEWSTATUS)
                          
                 else:
                     print "SET PROD STATUSES"        
                     #TODO STATUSES"    
+            
+            if (key=="SUMMARY"):
+                SUMMARY=castedValue  
+            
+            if (key=="ISSUE_TYPE"):
+                ISSUE_TYPE=castedValue 
+                
+            if (key=="PRIORITY"):
+                PRIORITY=castedValue    
+            
+            if (key=="DESCRIPTION"):
+                DESCRIPTION=castedValue 
+            
                         
-        print "priority before issue creation:{0}".format(str(PRIORITY))    
+        #print "priority before issue creation:{0}".format(str(PRIORITY))    
         CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS)
         time.sleep(0.7) # prevent jira crashing for script attack
-        sys.exit(5) #testinf do once
+        # sys.exit(5) #testinf do once
         print "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-    #now excel has been prosessed
+        #now excel has been prosessed
         
-    
-                    
-    
     end = time.clock()
     totaltime=end-start
     print "Time taken:{0} seconds".format(totaltime)
-       
-            
     print "*************************************************************************"
-    
-
-       
     sys.exit(0)
     
+
+
+
+
     
 def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS):
     
     
-    
+    TRANSIT="NA"
     jiraobj=jira
     project=JIRAPROJECT
     TASKTYPE="Task" #hardcoded
 
-  
-    
     print "Creating mitigation issue for JIRA project: {0}".format(project)
-    
     
     issue_dict = {
     'project': {'key': JIRAPROJECT},
@@ -359,20 +365,29 @@ def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,US
     'priority': {'name': str(PRIORITY) }, 
     #'resolution':{'id': '10100'},
     'assignee': {'name':USERNAME_ASSIGNEE},
-    
     'customfield_14302' if (ENV =="DEV") else 'customfield_14216' : int(MitigationCostsKeur),  # MitigationCostsKeur dev: 14302  prod: 14216
-
-
     }
 
     try:
         new_issue = jiraobj.create_issue(fields=issue_dict)
-        print "Issue created OK"
-        if (NEWSTATUS != "NA"):
-            jiraobj.transition_issue(new_issue, transition=NEWSTATUS)  # trantsit to state where it was in excel
+        print "===> Issue created OK:{0}".format(new_issue)
+        if (NEWSTATUS != "Todo"): # status after cretion
+            
+            #map state to transit for Mitigation issues
+            if (NEWSTATUS=="In Progress"):
+                TRANSIT="Start Progress"
+            if (NEWSTATUS=="Done"):
+                TRANSIT="Done"
+            
+            
+            print "Newstatus will be:{0}".format(NEWSTATUS)
+            print "===> Executing transit:{0}".format(TRANSIT)
+            jiraobj.transition_issue(new_issue, transition=TRANSIT)  # trantsit to state where it was in excel
+        else:
+            print "Initial status found: {0}, nothing done".format(NEWSTATUS)
         
     except Exception,e:
-        print("Failed to create JIRA object, error: %s" % e)
+        print("Failed to create JIRA object or transit problem, error: %s" % e)
         sys.exit(1)
     return new_issue    
     
