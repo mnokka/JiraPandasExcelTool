@@ -1,4 +1,3 @@
-#
 # skipped Pandas and using tradional excel reading lib: import openpyxl 
 #
 # Jira Exp/Imp used to export excel with all field information
@@ -24,8 +23,13 @@ start = time.clock()
 __version__ = u"0.1.RISKS" 
 
 # should pass via parameters
+# development vs production Jira
 ENV="DEV"
 #ENV=u"PROD"
+
+#risk vs mitigation risk project operations
+#TYPE="MITI"
+TYPE="RISK"
 
 logging.basicConfig(level=logging.DEBUG) # IF calling from Groovy, this must be set logging level DEBUG in Groovy side order these to be written out
 
@@ -280,7 +284,7 @@ def main():
                         else:
                             logging.debug("==> No issue(s) returned by JQL query")
                             
-                        time.sleep(0.7)
+                        
                 
             if (key=="ASSIGNEE"):
                 #print "Assignee column found"
@@ -309,10 +313,18 @@ def main():
                        
             if (key=="STATUS"):
                 #print "STATUS cost column found: {0}".format(value)
-                if (ENV =="DEV"):
+                if (ENV =="DEV" and TYPE=="MITI"):
                     if (value=="To Do"):
                         print "Dev: To Do found, doing nothing"
                         NEWSTATUS="To Do"
+                    else:
+                        NEWSTATUS=value  
+                        print "Dev: new status set:{0}".format(NEWSTATUS)
+                
+                elif (ENV =="DEV" and TYPE=="RISK"):
+                    if (value=="Proposed"):
+                        print "Dev: TProposed found, doing nothing"
+                        NEWSTATUS="Proposed"
                     else:
                         NEWSTATUS=value  
                         print "Dev: new status set:{0}".format(NEWSTATUS)
@@ -334,10 +346,16 @@ def main():
                 DESCRIPTION=castedValue 
             
                         
-        #print "priority before issue creation:{0}".format(str(PRIORITY))    
-        CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS)
+        # just 2 funcitons for 2 projectypes, this is just a tool
+        if (TYPE=="MITI"):
+            CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV)
+        elif (TYPE=="RISK"):
+            CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV)
+        else:
+            print "Lost in translation. Cant do want I should do"
+                
         time.sleep(0.7) # prevent jira crashing for script attack
-        # sys.exit(5) #testinf do once
+        sys.exit(5) #testinf do once
         print "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
         #now excel has been prosessed
         
@@ -352,7 +370,7 @@ def main():
 
 
     
-def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS):
+def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV):
     
     
     TRANSIT="NA"
@@ -397,7 +415,52 @@ def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,US
     return new_issue    
     
      
- 
+def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV):
+    
+    
+    TRANSIT="NA"
+    jiraobj=jira
+    project=JIRAPROJECT
+    TASKTYPE="Task" #hardcoded
+
+    print "Creating mitigation issue for JIRA project: {0}".format(project)
+    
+    issue_dict = {
+    'project': {'key': JIRAPROJECT},
+    'summary': str(SUMMARY),
+    'description': str(DESCRIPTION),
+    'issuetype': {'name': TASKTYPE},
+    'priority': {'name': str(PRIORITY) }, 
+    #'resolution':{'id': '10100'},
+    'assignee': {'name':USERNAME_ASSIGNEE},
+    #'customfield_14302' if (ENV =="DEV") else 'customfield_14216' : int(MitigationCostsKeur),  # MitigationCostsKeur dev: 14302  prod: 14216
+    }
+
+    try:
+        new_issue = jiraobj.create_issue(fields=issue_dict)
+        print "===> Issue created OK:{0}".format(new_issue)
+        if (NEWSTATUS != "Proposed"): # status after cretion
+            
+            #map state to transit for Mitigation issues
+            if (NEWSTATUS=="Threat"):
+                TRANSIT="Threat"
+            if (NEWSTATUS=="Realized"):
+                TRANSIT="Realized"
+            if (NEWSTATUS=="Eliminated"):
+                TRANSIT="Eliminated"   
+            if (NEWSTATUS=="No Action"):
+                TRANSIT="NoAction" 
+            
+            print "Newstatus will be:{0}".format(NEWSTATUS)
+            print "===> Executing transit:{0}".format(TRANSIT)
+            jiraobj.transition_issue(new_issue, transition=TRANSIT)  # trantsit to state where it was in excel
+        else:
+            print "Initial status found: {0}, nothing done".format(NEWSTATUS)
+        
+    except Exception,e:
+        print("Failed to create JIRA object or transit problem, error: %s" % e)
+        sys.exit(1)
+    return new_issue   
     
     
 if __name__ == '__main__':
