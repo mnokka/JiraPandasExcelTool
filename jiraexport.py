@@ -351,22 +351,37 @@ def main():
                 DESCRIPTION=castedValue 
                 
             if (key=="DisciplineRM"):
-                DisciplineRM=castedValue    
+                if(castedValue==0):
+                    DisciplineRM=castedValue
+                else:
+                    DisciplineRM="-1"     
             
             if (key=="DisciplineF"):
-                DisciplineF=castedValue     
+                if(castedValue==0):
+                    DisciplineF=castedValue     
+                else:
+                    DisciplineF="-1"  
+            
             
             if (CAT=="SHIP"):
                 DISCIPLINE=DisciplineRM
             elif (CAT=="FIN"):
                 DISCIPLINE=DisciplineF
             
+            if (DISCIPLINE==0):
+                DISCIPLINE="-1"   
+            
+            if (key=="RiskCost"):
+                RiskCost=castedValue   
+                
+             
+            
                         
         # just 2 funcitons for 2 projectypes, this is just a tool
         if (TYPE=="MITI"):
-            CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE)
+            CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,CAT)
         elif (TYPE=="RISK"):
-            CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE)
+            CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE,RiskCost,CAT)
         else:
             print "Lost in translation. Cant do want I should do"
                 
@@ -386,10 +401,10 @@ def main():
 
 
     
-def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE):
+def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,CAT):
     
     
-    TRANSIT="NA"
+    TRANSIT="None"
     jiraobj=jira
     project=JIRAPROJECT
     TASKTYPE="Task" #hardcoded
@@ -402,12 +417,9 @@ def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,US
     'description': str(DESCRIPTION),
     'issuetype': {'name': TASKTYPE},
     'priority': {'name': str(PRIORITY) }, 
-    #'resolution':{'id': '10100'},
     'assignee': {'name':USERNAME_ASSIGNEE},
-    'customfield_14302' if (ENV =="DEV") else 'customfield_14216' : int(MitigationCostsKeur),  # MitigationCostsKeur dev: 14302  prod: 14216
-    # disciplines not use thus not implemented, see risk function howto
-    #'customfield_14223' if (ENV =="DEV"  and TYPE=="FIN") elif (ENV =="DEV" and TYPE=="SHIP") 'customfield_14328" : DISCIPLINE,  # DisciplineF - DisciplineRM
-    #'customfield_14210' if (ENV =="PROD" and TYPE=="FIN") elif (ENV =="PROD" and TYPE=="SHIP") 'customfield_14209" : DISCIPLINE,  # DisciplineF - DisciplineRM
+        'customfield_14302' if (ENV =="DEV") else 'customfield_14216' : int(MitigationCostsKeur), # MitigationCostsKeur dev: 14302  prod: 14216
+
     }
 
     try:
@@ -427,10 +439,10 @@ def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,US
             jiraobj.transition_issue(new_issue, transition=TRANSIT)  # trantsit to state where it was in excel 
         else:
             print "Initial status found: {0}, nothing done".format(NEWSTATUS)
-        
-        #FIELD="'customfield_14223'"
-        #print "field:{0}:".format(FIELD)  
-        #new_issue.update(fields={FIELD: {'value':'Project Management'}})
+            
+             
+  
+   
         
     except Exception,e:
         print("Failed to create JIRA object or transit problem, error: %s" % e)
@@ -438,7 +450,7 @@ def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,US
     return new_issue    
     
      
-def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE):
+def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE,RiskCost,CAT):
     
     print "=====>    Internal configuration:{0} , {1} , {2}".format(ENV, TYPE, CAT)
     print "Discipline:{0} ".format(DISCIPLINE)
@@ -447,7 +459,7 @@ def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME
     jiraobj=jira
     project=JIRAPROJECT
     TASKTYPE="Task" #hardcoded
-    DISCIPLINEFIELD="NA"
+    DISCIPLINEFIELD="None"
 
     print "Creating Risk issue for JIRA project: {0}".format(project)
     
@@ -459,13 +471,9 @@ def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME
     'issuetype': {'name': TASKTYPE},
     'priority': {'name': str(PRIORITY) }, 
     #'resolution':{'id': '10100'},
-    'assignee': {'name':USERNAME_ASSIGNEE},
-    #'customfield_14302' if (ENV =="DEV") else 'customfield_14216' : int(MitigationCostsKeur),  # MitigationCostsKeur dev: 14302  prod: 14216
-    #'customfield_14328' if (ENV =="DEV") else 'customfield_14209' : DISCIPLINE,  # DisciplineRM dev: 14328  prod: 14209
-    #'customfield_14223' if (ENV =="DEV" and TYPE=="FIN") else 'customfield_14328' if (ENV =="DEV" and TYPE=="SHIP")  else 'customfield_14302' : DISCIPLINE,   # DisciplineF - DisciplineRM
-    
-    #FIELD : DISCIPLINE,
-    #'customfield_14210' if (ENV =="PROD" and TYPE=="FIN") else 'customfield_14209' if (ENV =="PROD" and TYPE=="SHIP") else'customfield_14210' : DISCIPLINE,  # DisciplineF - DisciplineRM 
+    'assignee': {'name':USERNAME_ASSIGNEE}, 
+    'customfield_14203' if (ENV =="DEV") else 'customfield_14208' : int(RiskCost),  # Risk Cost (Keur) dev: 14203  prod: 14208
+   
     
     }
 
@@ -501,8 +509,9 @@ def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME
         elif (ENV =="PROD" and CAT=="SHIP"): 
             DISCIPLINEFIELD="customfield_14209" #  DisciplineRM
         else:
-            print "ARGH ERRORS WTIH DISCIPLINE FIELDS"    
-        new_issue.update(fields={DISCIPLINEFIELD: {'value':DISCIPLINE}})    
+            print "ARGH ERRORS WTIH RISK DISCIPLINE FIELDS"    
+        print "DISCIPLINE:{0}".format(DISCIPLINE)
+        new_issue.update(fields={DISCIPLINEFIELD: {"id": "-1"}})  #   DISCIPLINE
         
     except Exception,e:
         print("Failed to create JIRA object or transit problem, error: %s" % e)
