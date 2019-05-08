@@ -31,6 +31,10 @@ ENV="DEV"
 #TYPE="MITI"
 TYPE="RISK"
 
+#project type ship vs. finance
+#CATE="SHIP"
+CAT="FIN"
+
 logging.basicConfig(level=logging.DEBUG) # IF calling from Groovy, this must be set logging level DEBUG in Groovy side order these to be written out
 
 
@@ -134,6 +138,8 @@ def main():
     AB=28 #Mitigation Costs (Keur)
     
  
+    print "=====>    Internal configuration:{0} , {1} , {2}".format(ENV, TYPE, CAT)
+ 
     ##############################################################################################
     #Go through main excel sheet for main issue keys (and contents findings)
     # Create dictionary structure (remarks)
@@ -165,7 +171,6 @@ def main():
             
             PRIORITY=(CurrentSheet.cell(row=i, column=F).value)
             Issues[KEY]["PRIORITY"] = PRIORITY
-            print "priority after setting:{0}".format(str(PRIORITY))
            
             
             STATUS=(CurrentSheet.cell(row=i, column=H).value)
@@ -344,18 +349,29 @@ def main():
             
             if (key=="DESCRIPTION"):
                 DESCRIPTION=castedValue 
+                
+            if (key=="DisciplineRM"):
+                DisciplineRM=castedValue    
+            
+            if (key=="DisciplineF"):
+                DisciplineF=castedValue     
+            
+            if (CAT=="SHIP"):
+                DISCIPLINE=DisciplineRM
+            elif (CAT=="FIN"):
+                DISCIPLINE=DisciplineF
             
                         
         # just 2 funcitons for 2 projectypes, this is just a tool
         if (TYPE=="MITI"):
-            CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV)
+            CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE)
         elif (TYPE=="RISK"):
-            CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV)
+            CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE)
         else:
             print "Lost in translation. Cant do want I should do"
                 
         time.sleep(0.7) # prevent jira crashing for script attack
-        sys.exit(5) #testinf do once
+        sys.exit(5) #testing do only once
         print "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
         #now excel has been prosessed
         
@@ -370,7 +386,7 @@ def main():
 
 
     
-def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV):
+def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE):
     
     
     TRANSIT="NA"
@@ -389,6 +405,9 @@ def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,US
     #'resolution':{'id': '10100'},
     'assignee': {'name':USERNAME_ASSIGNEE},
     'customfield_14302' if (ENV =="DEV") else 'customfield_14216' : int(MitigationCostsKeur),  # MitigationCostsKeur dev: 14302  prod: 14216
+    # disciplines not use thus not implemented, see risk function howto
+    #'customfield_14223' if (ENV =="DEV"  and TYPE=="FIN") elif (ENV =="DEV" and TYPE=="SHIP") 'customfield_14328" : DISCIPLINE,  # DisciplineF - DisciplineRM
+    #'customfield_14210' if (ENV =="PROD" and TYPE=="FIN") elif (ENV =="PROD" and TYPE=="SHIP") 'customfield_14209" : DISCIPLINE,  # DisciplineF - DisciplineRM
     }
 
     try:
@@ -405,9 +424,13 @@ def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,US
             
             print "Newstatus will be:{0}".format(NEWSTATUS)
             print "===> Executing transit:{0}".format(TRANSIT)
-            jiraobj.transition_issue(new_issue, transition=TRANSIT)  # trantsit to state where it was in excel
+            jiraobj.transition_issue(new_issue, transition=TRANSIT)  # trantsit to state where it was in excel 
         else:
             print "Initial status found: {0}, nothing done".format(NEWSTATUS)
+        
+        #FIELD="'customfield_14223'"
+        #print "field:{0}:".format(FIELD)  
+        #new_issue.update(fields={FIELD: {'value':'Project Management'}})
         
     except Exception,e:
         print("Failed to create JIRA object or transit problem, error: %s" % e)
@@ -415,15 +438,19 @@ def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,US
     return new_issue    
     
      
-def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV):
+def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE):
     
+    print "=====>    Internal configuration:{0} , {1} , {2}".format(ENV, TYPE, CAT)
+    print "Discipline:{0} ".format(DISCIPLINE)
     
     TRANSIT="NA"
     jiraobj=jira
     project=JIRAPROJECT
     TASKTYPE="Task" #hardcoded
+    DISCIPLINEFIELD="NA"
 
-    print "Creating mitigation issue for JIRA project: {0}".format(project)
+    print "Creating Risk issue for JIRA project: {0}".format(project)
+    
     
     issue_dict = {
     'project': {'key': JIRAPROJECT},
@@ -434,6 +461,12 @@ def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME
     #'resolution':{'id': '10100'},
     'assignee': {'name':USERNAME_ASSIGNEE},
     #'customfield_14302' if (ENV =="DEV") else 'customfield_14216' : int(MitigationCostsKeur),  # MitigationCostsKeur dev: 14302  prod: 14216
+    #'customfield_14328' if (ENV =="DEV") else 'customfield_14209' : DISCIPLINE,  # DisciplineRM dev: 14328  prod: 14209
+    #'customfield_14223' if (ENV =="DEV" and TYPE=="FIN") else 'customfield_14328' if (ENV =="DEV" and TYPE=="SHIP")  else 'customfield_14302' : DISCIPLINE,   # DisciplineF - DisciplineRM
+    
+    #FIELD : DISCIPLINE,
+    #'customfield_14210' if (ENV =="PROD" and TYPE=="FIN") else 'customfield_14209' if (ENV =="PROD" and TYPE=="SHIP") else'customfield_14210' : DISCIPLINE,  # DisciplineF - DisciplineRM 
+    
     }
 
     try:
@@ -456,6 +489,20 @@ def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME
             jiraobj.transition_issue(new_issue, transition=TRANSIT)  # trantsit to state where it was in excel
         else:
             print "Initial status found: {0}, nothing done".format(NEWSTATUS)
+            
+        
+        #only quikc way set drop down menus, creation did not work as dictionary in use (should have used multiple dictionaries....)
+        if (ENV =="DEV" and CAT=="FIN"):
+            DISCIPLINEFIELD="customfield_14223" # DisciplineF 
+        elif (ENV =="DEV" and CAT=="SHIP"):
+            DISCIPLINEFIELD="customfield_14328" #  DisciplineRM
+        elif (ENV =="PROD" and CAT=="FIN"):
+            DISCIPLINEFIELD="customfield_14210" # DisciplineF 
+        elif (ENV =="PROD" and CAT=="SHIP"): 
+            DISCIPLINEFIELD="customfield_14209" #  DisciplineRM
+        else:
+            print "ARGH ERRORS WTIH DISCIPLINE FIELDS"    
+        new_issue.update(fields={DISCIPLINEFIELD: {'value':DISCIPLINE}})    
         
     except Exception,e:
         print("Failed to create JIRA object or transit problem, error: %s" % e)
