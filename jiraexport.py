@@ -30,8 +30,8 @@ __version__ = u"0.9.RISKS"
 #####################################################################
 
 # development vs production Jira
-ENV="DEV"
-#ENV=u"PROD"
+#ENV="DEV"
+ENV="PROD"
 
 #risk vs mitigation risk project operations
 #TYPE="MITI"
@@ -351,10 +351,32 @@ def main():
                     else:
                         NEWSTATUS=value  
                         print "Dev: new status set:{0}".format(NEWSTATUS)
-                         
+                
+                #duplicating intentionally       
+                elif (ENV =="PROD" and TYPE=="MITI"):
+                    if (value=="To Do"):
+                        print "Prod: To Do found, doing nothing"
+                        NEWSTATUS="To Do"
+                    else:
+                        NEWSTATUS=value  
+                        print "Prod: new status set:{0}".format(NEWSTATUS)
+                
+                elif (ENV =="PROD" and TYPE=="RISK"):
+                    if (value=="Proposed"):
+                        print "Prod: TProposed found, doing nothing"
+                        NEWSTATUS="Proposed"
+                    else:
+                            NEWSTATUS=value  
+                            print "Prod: new status set:{0}".format(NEWSTATUS)
+            
                 else:
-                    print "SET PROD STATUSES"        
+                    print "ERROR: NO STATUSES"
+                    sys.exit(5)        
                     #TODO STATUSES"    
+                
+                    
+                    
+                    
             
             if (key=="SUMMARY"):
                 SUMMARY=castedValue  
@@ -510,7 +532,7 @@ def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME
             if (NEWSTATUS=="Eliminated"):
                 TRANSIT="Eliminated"   
             if (NEWSTATUS=="No Action"):
-                TRANSIT="NoAction" 
+                TRANSIT="No Action" # prod transt, dev transit was NoAction 
             
             print "Newstatus will be:{0}".format(NEWSTATUS)
             print "===> Executing transit:{0}".format(TRANSIT)
