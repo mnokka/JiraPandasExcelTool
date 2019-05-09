@@ -283,7 +283,7 @@ def main():
                             for issue in issue_list:
                                 #logging.debug("One issue returned for query")
                                 logging.debug("ISSUE TO BE LINKED ==> {0}".format(issue))
-                
+                                LINKEDISSUE=issue
                         elif len(issue_list) > 1:
                             logging.debug("ERROR ==> More than 1 issue was returned by JQL query")
                         else:
@@ -381,7 +381,7 @@ def main():
         if (TYPE=="MITI"):
             CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,CAT)
         elif (TYPE=="RISK"):
-            CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE,RiskCost,CAT)
+            CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE,RiskCost,CAT,LINKEDISSUE,LINKS)
         else:
             print "Lost in translation. Cant do want I should do"
                 
@@ -450,7 +450,7 @@ def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,US
     return new_issue    
     
      
-def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE,RiskCost,CAT):
+def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE,RiskCost,CAT,LINKEDISSUE,LINKS):
     
     print "=====>    Internal configuration:{0} , {1} , {2}".format(ENV, TYPE, CAT)
     print "Discipline:{0} ".format(DISCIPLINE)
@@ -512,6 +512,13 @@ def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME
             print "ARGH ERRORS WTIH RISK DISCIPLINE FIELDS"    
         print "DISCIPLINE:{0}".format(DISCIPLINE)
         new_issue.update(fields={DISCIPLINEFIELD: {"id": "-1"}})  #   DISCIPLINE
+        
+        print "new issue: {0}   linked issue:{1}".format(new_issue,LINKEDISSUE)
+        jiraobj.create_issue_link("is mitigated by",new_issue,LINKEDISSUE,None) # last is comment field
+    
+
+        
+        
         
     except Exception,e:
         print("Failed to create JIRA object or transit problem, error: %s" % e)
