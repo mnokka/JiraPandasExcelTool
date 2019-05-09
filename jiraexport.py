@@ -20,9 +20,15 @@ from collections import defaultdict
 import re
 
 start = time.clock()
-__version__ = u"0.1.RISKS" 
+__version__ = u"0.9.RISKS" 
 
+
+
+###################################################################
 # should pass via parameters
+# CODE CONFIGURATIONS
+#####################################################################
+
 # development vs production Jira
 ENV="DEV"
 #ENV=u"PROD"
@@ -34,6 +40,13 @@ TYPE="RISK"
 #project type ship vs. finance
 #CATE="SHIP"
 CAT="FIN"
+
+# do only one operation for testing purposes
+ONCE="NO"
+#ONCE="YES"
+
+###########################################################################
+
 
 logging.basicConfig(level=logging.DEBUG) # IF calling from Groovy, this must be set logging level DEBUG in Groovy side order these to be written out
 
@@ -253,6 +266,7 @@ def main():
             if (LINKS and key=="LinkedIssues"): #-l parameter to do links operations to given target project
                 #print "Linked issues column found"
                 
+                TOLINKLIST=[] # all to be linked issues for this issue stored here for processing
                 print "Linking active: Linking target project: {0}".format(LINKS)
                 if (value==None): #no linked items case
                     value2="NONE"
@@ -279,16 +293,20 @@ def main():
                         
                         issue_list=jira.search_issues(jql_query)
                         
-                        if len(issue_list) == 1:
+                        if len(issue_list) >= 1:
                             for issue in issue_list:
                                 #logging.debug("One issue returned for query")
                                 logging.debug("ISSUE TO BE LINKED ==> {0}".format(issue))
                                 LINKEDISSUE=issue
-                        elif len(issue_list) > 1:
-                            logging.debug("ERROR ==> More than 1 issue was returned by JQL query")
+                                TOLINKLIST.append(issue)
+                        #elif len(issue_list) > 1:
+                        #    logging.debug("ERROR ==> More than 1 issue was returned by JQL query")
+                        #    LINKEDISSUE="EMPTY"
                         else:
                             logging.debug("==> No issue(s) returned by JQL query")
-                            
+                            #LINKEDISSUE="EMPTY"
+            #else:
+            #    LINKEDISSUE="EMPTY"               
                         
                 
             if (key=="ASSIGNEE"):
@@ -381,12 +399,14 @@ def main():
         if (TYPE=="MITI"):
             CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,CAT)
         elif (TYPE=="RISK"):
-            CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE,RiskCost,CAT,LINKEDISSUE,LINKS)
+            CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE,RiskCost,CAT,TOLINKLIST,LINKS)
         else:
             print "Lost in translation. Cant do want I should do"
                 
         time.sleep(0.7) # prevent jira crashing for script attack
-        sys.exit(5) #testing do only once
+        if (ONCE=="YES"):
+            print "ONCE testing mode ,stopping now"
+            sys.exit(5) #testing do only once
         print "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
         #now excel has been prosessed
         
@@ -450,7 +470,7 @@ def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,US
     return new_issue    
     
      
-def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE,RiskCost,CAT,LINKEDISSUE,LINKS):
+def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE,RiskCost,CAT,TOLINKLIST,LINKS):
     
     print "=====>    Internal configuration:{0} , {1} , {2}".format(ENV, TYPE, CAT)
     print "Discipline:{0} ".format(DISCIPLINE)
@@ -513,9 +533,17 @@ def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME
         print "DISCIPLINE:{0}".format(DISCIPLINE)
         new_issue.update(fields={DISCIPLINEFIELD: {"id": "-1"}})  #   DISCIPLINE
         
-        print "new issue: {0}   linked issue:{1}".format(new_issue,LINKEDISSUE)
-        jiraobj.create_issue_link("is mitigated by",new_issue,LINKEDISSUE,None) # last is comment field
-    
+        #print "new issue: {0}   linked issue:{1}".format(new_issue,LINKEDISSUE)
+        LENGHT=len(TOLINKLIST)
+        print "List of linked ones, length:{0}".format(LENGHT)
+        if (LINKS and TOLINKLIST): # link only if requested and there is something to link
+            
+            for LINKEDISSUE in TOLINKLIST:
+                print "Linking requested, doing: new issue: {0} --> is mitigated by --->  linked issue:{1}".format(new_issue,LINKEDISSUE) # linktype hardcoded
+                time.sleep(0.5)
+                jiraobj.create_issue_link("is mitigated by",new_issue,LINKEDISSUE,None) # last is comment field, skipping now
+        else:
+            print "No linking requested nor no links for this issue, skipping"
 
         
         
