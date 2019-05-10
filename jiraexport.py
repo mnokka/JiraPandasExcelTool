@@ -396,24 +396,25 @@ def main():
                 
             if (key=="DisciplineRM"):
                 if(castedValue==0):
-                    DisciplineRM=castedValue
+                    DisciplineRM="-1"  
                 else:
-                    DisciplineRM="-1"     
+                    DisciplineRM=castedValue    
             
             if (key=="DisciplineF"):
                 if(castedValue==0):
-                    DisciplineF=castedValue     
+                    DisciplineF="-1"      
                 else:
-                    DisciplineF="-1"  
+                    DisciplineF=castedValue  
             
             
+            #print "RM:{0} F:{1}".format(DisciplineRM,DisciplineF)
             if (CAT=="SHIP"):
                 DISCIPLINE=DisciplineRM
             elif (CAT=="FIN"):
                 DISCIPLINE=DisciplineF
             
-            if (DISCIPLINE==0):
-                DISCIPLINE="-1"   
+            #if (DISCIPLINE==0):
+            #    DISCIPLINE="-1"   
             
             if (key=="RiskCost"):
                 RiskCost=castedValue   
@@ -439,7 +440,8 @@ def main():
         if (TYPE=="MITI"):
             CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,CAT,DueDate)
         elif (TYPE=="RISK"):
-            CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE,RiskCost,CAT,TOLINKLIST,LINKS)
+            print "Calling Discipline:{0}".format(DISCIPLINE)
+            CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE,RiskCost,CAT,TOLINKLIST,LINKS,DueDate)
         else:
             print "Lost in translation. Cant do want I should do"
                 
@@ -512,7 +514,7 @@ def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,US
     return new_issue    
     
      
-def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE,RiskCost,CAT,TOLINKLIST,LINKS):
+def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE,RiskCost,CAT,TOLINKLIST,LINKS,DueDate):
     
     print "=====>    Internal configuration:{0} , {1} , {2}".format(ENV, TYPE, CAT)
     print "Discipline:{0} ".format(DISCIPLINE)
@@ -561,19 +563,43 @@ def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME
             print "Initial status found: {0}, nothing done".format(NEWSTATUS)
             
         
+        if not (DueDate=="0"):
+            new_issue.update(duedate=DueDate)
+        
+        
         #only quikc way set drop down menus, creation did not work as dictionary in use (should have used multiple dictionaries....)
+        #print "Using dicipline:{0}".format(DISCIPLINE)
         if (ENV =="DEV" and CAT=="FIN"):
             DISCIPLINEFIELD="customfield_14223" # DisciplineF 
+            new_issue.update(fields={DISCIPLINEFIELD: {'value': DISCIPLINE}})  #   DISCIPLIN 
         elif (ENV =="DEV" and CAT=="SHIP"):
             DISCIPLINEFIELD="customfield_14328" #  DisciplineRM
+            new_issue.update(fields={DISCIPLINEFIELD: {'value' : DISCIPLINE}})  #   DISCIPLIN 
         elif (ENV =="PROD" and CAT=="FIN"):
             DISCIPLINEFIELD="customfield_14210" # DisciplineF 
+            new_issue.update(fields={DISCIPLINEFIELD: {'value' : DISCIPLINE}})  #   DISCIPLIN 
         elif (ENV =="PROD" and CAT=="SHIP"): 
             DISCIPLINEFIELD="customfield_14209" #  DisciplineRM
+            new_issue.update(fields={DISCIPLINEFIELD: {'value' : DISCIPLINE}})  #   DISCIPLIN 
         else:
             print "ARGH ERRORS WTIH RISK DISCIPLINE FIELDS"    
-        print "DISCIPLINE:{0}".format(DISCIPLINE)
-        new_issue.update(fields={DISCIPLINEFIELD: {"id": "-1"}})  #   DISCIPLINE
+            print "DISCIPLINE:{0}".format(DISCIPLINE)
+            new_issue.update(fields={DISCIPLINEFIELD: {"id": "-1"}})  #   DISCIPLINE possible fails
+        
+        
+       # if (ENV =="DEV"):
+       #     DISCIPLxxINEFIELD="customfield_14223" # DisciplineF 
+       # 
+       # if (ENV =="PROD"):
+       #     DISCIPLINxxEFIELD="customfield_14328" #  DisciplineRM
+        
+        #    new_issue.update(fields={DISCIPLINEFIELD: {"id": "-1"}})  #   DISCIPLINE
+        
+        
+        
+        
+        
+        
         
         #print "new issue: {0}   linked issue:{1}".format(new_issue,LINKEDISSUE)
         LENGHT=len(TOLINKLIST)
