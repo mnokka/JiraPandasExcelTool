@@ -424,7 +424,18 @@ def main():
             if (key=="RiskCost"):
                 RiskCost=castedValue   
                    
+            if (key=="HSEImpact"):
+                HSEImpact=castedValue   
+            
+            if (key=="PROBABILITY"):
+                PROBABILITY=castedValue  
+            
+            if (key=="QualityImpact"):
+                QualityImpact=castedValue  
                 
+            if (key=="SheduleImpact"):
+                SheduleImpact=castedValue     
+     
                 
             if (key=="DueDate"):
                 DueDate=castedValue
@@ -448,7 +459,7 @@ def main():
             CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,CAT,DueDate)
         elif (TYPE=="RISK"):
             print "Calling Discipline:{0}".format(DISCIPLINE)
-            CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE,RiskCost,CAT,TOLINKLIST,LINKS,DueDate,SystemNumber)
+            CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE,RiskCost,CAT,TOLINKLIST,LINKS,DueDate,SystemNumber,HSEImpact,PROBABILITY,QualityImpact,SheduleImpact)
         else:
             print "Lost in translation. Cant do want I should do"
                 
@@ -521,7 +532,7 @@ def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,US
     return new_issue    
     
      
-def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE,RiskCost,CAT,TOLINKLIST,LINKS,DueDate,SystemNumber):
+def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE,RiskCost,CAT,TOLINKLIST,LINKS,DueDate,SystemNumber,HSEImpact,PROBABILITY,QualityImpact,SheduleImpact):
     
     print "=====>    Internal configuration:{0} , {1} , {2}".format(ENV, TYPE, CAT)
     print "Discipline:{0} ".format(DISCIPLINE)
@@ -594,18 +605,35 @@ def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME
             new_issue.update(fields={DISCIPLINEFIELD: {"id": "-1"}})  #   DISCIPLINE possible fails
         
         
-       # if (ENV =="DEV"):
-       #     DISCIPLxxINEFIELD="customfield_14223" # DisciplineF 
-       # 
-       # if (ENV =="PROD"):
-       #     DISCIPLINxxEFIELD="customfield_14328" #  DisciplineRM
+        #these fields do have default value by Jira
+        if (ENV =="DEV"):
+            HSEImpactFIELD="customfield_14224"  
+            new_issue.update(fields={HSEImpactFIELD: {'value' : HSEImpact}})
+            
+            PROBABILITYFIELD="customfield_14225"  
+            new_issue.update(fields={PROBABILITYFIELD: {'value' : PROBABILITY}})
+            
+            QualityImpactFIELD="customfield_14226"  
+            new_issue.update(fields={QualityImpactFIELD: {'value' : QualityImpact}})
+            
+            SheduleImpactFIELD="customfield_14227"  
+            new_issue.update(fields={SheduleImpactFIELD: {'value' :   SheduleImpact}})
+            
         
-        #    new_issue.update(fields={DISCIPLINEFIELD: {"id": "-1"}})  #   DISCIPLINE
+        if (ENV =="PROD"):
+            HSEImpactFIELD="customfield_14204"  
+            new_issue.update(fields={HSEImpactFIELD: {'value' : HSEImpact}})
+            
+            PROBABILITYFIELD="customfield_14203" 
+            new_issue.update(fields={PROBABILITYFIELD: {'value' : PROBABILITY}})
         
+            QualityImpactFIELD="customfield_14205"  
+            new_issue.update(fields={QualityImpactFIELD: {'value' : QualityImpact}})
         
+            SheduleImpactFIELD="customfield_14206"  
+            new_issue.update(fields={SheduleImpactFIELD: {'value' :   SheduleImpact}})
         
-        
-        
+
         
         
         #print "new issue: {0}   linked issue:{1}".format(new_issue,LINKEDISSUE)
