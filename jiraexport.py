@@ -42,8 +42,8 @@ CAT="SHIP"
 #CAT="FIN"
 
 # do only one operation for testing purposes
-#ONCE="NO"
-ONCE="YES"
+ONCE="NO"
+#ONCE="YES"
 
 ###########################################################################
 
@@ -605,21 +605,38 @@ def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME
             new_issue.update(fields={DISCIPLINEFIELD: {"id": "-1"}})  #   DISCIPLINE possible fails
         
         
-        #these fields do have default value by Jira
+        #these fields do have default value by Jira, mostly...
         if (ENV =="DEV"):
-            HSEImpactFIELD="customfield_14224"  
-            new_issue.update(fields={HSEImpactFIELD: {'value' : HSEImpact}})
+            HSEImpactFIELD="customfield_14224"
+            if not(HSEImpact==0):
+                HSEImpactFIELD="customfield_14224"  
+                new_issue.update(fields={HSEImpactFIELD: {'value' : HSEImpact}})
+            else:
+                new_issue.update(fields={HSEImpactFIELD: {"id": "-1"}}) 
             
-            PROBABILITYFIELD="customfield_14225"  
-            new_issue.update(fields={PROBABILITYFIELD: {'value' : PROBABILITY}})
+            PROBABILITYFIELD="customfield_14225"
+            if not(PROBABILITY==0):
+                PROBABILITYFIELD="customfield_14225"  
+                new_issue.update(fields={PROBABILITYFIELD: {'value' : PROBABILITY}})
+            else:
+                new_issue.update(fields={PROBABILITYFIELD: {"id": "-1"}}) 
             
             QualityImpactFIELD="customfield_14226"  
-            new_issue.update(fields={QualityImpactFIELD: {'value' : QualityImpact}})
+            if not(QualityImpact==0):
+                QualityImpactFIELD="customfield_14226"  
+                new_issue.update(fields={QualityImpactFIELD: {'value' : QualityImpact}})
+            else:
+                new_issue.update(fields={QualityImpactFIELD: {"id": "-1"}})
             
-            SheduleImpactFIELD="customfield_14227"  
-            new_issue.update(fields={SheduleImpactFIELD: {'value' :   SheduleImpact}})
+            SheduleImpactFIELD="customfield_14227" 
+            if not(SheduleImpact==0):
+                SheduleImpactFIELD="customfield_14227"  
+                new_issue.update(fields={SheduleImpactFIELD: {'value' :   SheduleImpact}})
+            else:
+                new_issue.update(fields={SheduleImpactFIELD: {"id": "-1"}})
             
         
+        #TODO FIX ME
         if (ENV =="PROD"):
             HSEImpactFIELD="customfield_14204"  
             new_issue.update(fields={HSEImpactFIELD: {'value' : HSEImpact}})
