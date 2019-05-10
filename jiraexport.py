@@ -136,6 +136,7 @@ def main():
     E=5 #SUMMARY
     F=6 #priority
     H=8 #Status   
+    O=15   #system number
     Q=17 #Assignee
     S=19 #Disciopline(F)
     K=11 #duedate
@@ -233,6 +234,8 @@ def main():
             DueDate=(CurrentSheet.cell(row=i, column=K).value)
             Issues[KEY]["DueDate"] = str(DueDate)  # othewise datetime object
             
+            SystemNumber=(CurrentSheet.cell(row=i, column=O).value)
+            Issues[KEY]["SystemNumber"] = SystemNumber
 
             logging.debug("---------------------------------------------------")
             i=i+1
@@ -407,17 +410,21 @@ def main():
                     DisciplineF=castedValue  
             
             
-            #print "RM:{0} F:{1}".format(DisciplineRM,DisciplineF)
+
             if (CAT=="SHIP"):
                 DISCIPLINE=DisciplineRM
             elif (CAT=="FIN"):
                 DISCIPLINE=DisciplineF
             
-            #if (DISCIPLINE==0):
-            #    DISCIPLINE="-1"   
+             
             
+            if (key=="SystemNumber"):
+                SystemNumber=castedValue   
+                
             if (key=="RiskCost"):
                 RiskCost=castedValue   
+                   
+                
                 
             if (key=="DueDate"):
                 DueDate=castedValue
@@ -441,7 +448,7 @@ def main():
             CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,CAT,DueDate)
         elif (TYPE=="RISK"):
             print "Calling Discipline:{0}".format(DISCIPLINE)
-            CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE,RiskCost,CAT,TOLINKLIST,LINKS,DueDate)
+            CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE,RiskCost,CAT,TOLINKLIST,LINKS,DueDate,SystemNumber)
         else:
             print "Lost in translation. Cant do want I should do"
                 
@@ -514,7 +521,7 @@ def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,US
     return new_issue    
     
      
-def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE,RiskCost,CAT,TOLINKLIST,LINKS,DueDate):
+def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE,RiskCost,CAT,TOLINKLIST,LINKS,DueDate,SystemNumber):
     
     print "=====>    Internal configuration:{0} , {1} , {2}".format(ENV, TYPE, CAT)
     print "Discipline:{0} ".format(DISCIPLINE)
@@ -537,7 +544,7 @@ def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME
     #'resolution':{'id': '10100'},
     'assignee': {'name':USERNAME_ASSIGNEE}, 
     'customfield_14203' if (ENV =="DEV") else 'customfield_14208' : int(RiskCost),  # Risk Cost (Keur) dev: 14203  prod: 14208
-   
+    'customfield_14350' if (ENV =="DEV") else 'customfield_14212' : str(SystemNumber),  
     
     }
 
