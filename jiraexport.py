@@ -34,8 +34,8 @@ ENV="DEV"
 ##ENV="PROD"
 
 #risk vs mitigation risk project operations
-TYPE="MITI"
-#TYPE="RISK"
+#TYPE="MITI"
+TYPE="RISK"
 
 #project type ship vs. finance
 CAT="SHIP"
@@ -420,7 +420,7 @@ def main():
                 
             if (key=="DueDate"):
                 DueDate=castedValue
-                if not(DueDate):
+                if (not(DueDate) or DueDate=="None"):
                     DueDate="0"
                 else: #2019-03-01 00:00:00    (\d\d\d\d-\d\d-\d\d)(.*)
                     regex = r"(\d\d\d\d-\d\d-\d\d)(.*)"   #TT1400-39 'Logistic plan to do' (Risk Mitigation)
@@ -503,7 +503,7 @@ def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,US
         if not (DueDate=="0"):
             new_issue.update(duedate=DueDate)
                  
-  
+            
    
         
     except Exception,e:
