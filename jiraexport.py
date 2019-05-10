@@ -30,20 +30,20 @@ __version__ = u"0.9.RISKS"
 #####################################################################
 
 # development vs production Jira
-#ENV="DEV"
-ENV="PROD"
+ENV="DEV"
+##ENV="PROD"
 
 #risk vs mitigation risk project operations
-#TYPE="MITI"
-TYPE="RISK"
+TYPE="MITI"
+#TYPE="RISK"
 
 #project type ship vs. finance
-#CATE="SHIP"
-CAT="FIN"
+CAT="SHIP"
+#CAT="FIN"
 
 # do only one operation for testing purposes
-ONCE="NO"
-#ONCE="YES"
+#ONCE="NO"
+ONCE="YES"
 
 ###########################################################################
 
@@ -138,6 +138,7 @@ def main():
     H=8 #Status   
     Q=17 #Assignee
     S=19 #Disciopline(F)
+    K=11 #duedate
     
     T=20 #Probability
     U=21 #HSE Impact
@@ -228,6 +229,9 @@ def main():
             LinkedIssues=(CurrentSheet.cell(row=i, column=AK).value)
             Issues[KEY]["LinkedIssues"] = LinkedIssues
             
+            
+            DueDate=(CurrentSheet.cell(row=i, column=K).value)
+            Issues[KEY]["DueDate"] = str(DueDate)  # othewise datetime object
             
 
             logging.debug("---------------------------------------------------")
@@ -414,12 +418,26 @@ def main():
             if (key=="RiskCost"):
                 RiskCost=castedValue   
                 
-             
+            if (key=="DueDate"):
+                DueDate=castedValue
+                if not(DueDate):
+                    DueDate="0"
+                else: #2019-03-01 00:00:00    (\d\d\d\d-\d\d-\d\d)(.*)
+                    regex = r"(\d\d\d\d-\d\d-\d\d)(.*)"   #TT1400-39 'Logistic plan to do' (Risk Mitigation)
+                    match = re.search(regex, DueDate)
+                
+                    if (match):
+                        hit=match.group(1)
+                        DueDate=hit
+                    else:
+                        print "Error for DueDate parsing"
+                    
+                     
             
                         
         # just 2 funcitons for 2 projectypes, this is just a tool
         if (TYPE=="MITI"):
-            CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,CAT)
+            CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,CAT,DueDate)
         elif (TYPE=="RISK"):
             CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE,RiskCost,CAT,TOLINKLIST,LINKS)
         else:
@@ -443,7 +461,7 @@ def main():
 
 
     
-def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,CAT):
+def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,CAT,DueDate):
     
     
     TRANSIT="None"
@@ -460,7 +478,7 @@ def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,US
     'issuetype': {'name': TASKTYPE},
     'priority': {'name': str(PRIORITY) }, 
     'assignee': {'name':USERNAME_ASSIGNEE},
-        'customfield_14302' if (ENV =="DEV") else 'customfield_14216' : int(MitigationCostsKeur), # MitigationCostsKeur dev: 14302  prod: 14216
+    'customfield_14302' if (ENV =="DEV") else 'customfield_14216' : int(MitigationCostsKeur), # MitigationCostsKeur dev: 14302  prod: 14216
 
     }
 
@@ -482,7 +500,9 @@ def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,US
         else:
             print "Initial status found: {0}, nothing done".format(NEWSTATUS)
             
-             
+        if not (DueDate=="0"):
+            new_issue.update(duedate=DueDate)
+                 
   
    
         
