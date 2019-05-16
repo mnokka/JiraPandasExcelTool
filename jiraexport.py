@@ -642,61 +642,48 @@ def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME
         
         #TODO FIX ME   *****************************************
         if (ENV =="PROD"):
-            HSEImpactFIELD="customfield_14204"  
            
             if not(HSEImpact==0):
-                HSEImpactFIELD="customfield_14204"  
-                #new_issue.update(notify=False,fields={HSEImpactFIELD: {"id" : "26010" }}) # this works, ID from Jira UI (edit single selection ui), code uses meta info for this
-                # goovy listener adds \'s for the string
-                # EXCEL: <span class="amb-tooltip" style="display:inline-block;padding:.25rem .5rem;" title="Fatality(s) and/or permanent disability(s)">5</span><script>AJS.$("#customfield_14226-val .amb-tooltip").tooltip({gravity: 's'});</script>           
-                # META:  <span class="amb-tooltip" style="display:inline-block;padding:.25rem .5rem;" title="Fatality(s) and/or permanent disability(s)">5</span><script>AJS.$("#customfield_14204-val .amb-tooltip").tooltip({gravity: \'s\'});</script>
-                #REPLACED<span class="amb-tooltip" style="display:inline-block;padding:.25rem .5rem;" title="Fatality(s) and/or permanent disability(s)">5</span><script>AJS.$("#customfield_14226-val .amb-tooltip").tooltip({gravity: \'s\'});</script>
-                HSEImpact2=HSEImpact.replace("'s'","\\'s\\'")
-               
-                regex = r"(.)(>\d<)(.*)"   # just get the >number< part to be used in in (whole string messes the operation
-                match = re.search(regex, HSEImpact)
-                
-                if (match):
-                    hit=match.group(2)
-                    meta = jira.editmeta(new_issue)
-                    #pprint(meta)     
-                    field = None
-                    for field in meta["fields"].values():
-                        if field["name"] == "HSE Impact":
-                            break
-                    
-                    value = [v for v in field["allowedValues"] if hit in v["value"]][0] # get id for excel based custom field string , use id to set the new value (string itself is too complicated and do not work)
-                    new_issue.update(notify=False,fields={HSEImpactFIELD: {"id": value["id"]}}) # this works           
-                else:
-                    print "Error: can't decode excel based custom field value"     
+                HSEImpactFIELD="customfield_14204"
+                FIELD=HSEImpactFIELD
+                NAME="HSE Impact"
+                ExcelValue=HSEImpact
+                SetSingleSelectionValue(FIELD,NAME,ExcelValue,new_issue,jira)    
             else:
                 print "HSEImpact setting -1"
                 new_issue.update(notify=False,fields={HSEImpactFIELD: {"id": "-1"}}) 
             
             
-            
-            
-            
-            
-            PROBABILITYFIELD="customfield_14203" 
+
             if not(PROBABILITY==0):
                 PROBABILITYFIELD="customfield_14203"  
-                new_issue.update(notify=False,fields={PROBABILITYFIELD: {'value' : PROBABILITY}})
+                FIELD=PROBABILITYFIELD
+                NAME="Probability"
+                ExcelValue=PROBABILITY
+                SetSingleSelectionValue(FIELD,NAME,ExcelValue,new_issue,jira) 
+                
             else:
                 new_issue.update(notify=False,fields={PROBABILITYFIELD: {"id": "-1"}})
         
         
-            QualityImpactFIELD="customfield_14205"  
+      
             if not(QualityImpact==0):
-                QualityImpactFIELD="customfield_14205"  
-                new_issue.update(notify=False,fields={QualityImpactFIELD: {'value' : QualityImpact}})
+                QualityImpactFIELD="customfield_14205" 
+                FIELD=QualityImpactFIELD
+                NAME="Quality Impact"
+                ExcelValue=QualityImpact
+                SetSingleSelectionValue(FIELD,NAME,ExcelValue,new_issue,jira)  
             else:
                 new_issue.update(notify=False,fields={QualityImpactFIELD: {"id": "-1"}})
         
-            SheduleImpactFIELD="customfield_14206"  
+        
+        
             if not(SheduleImpact==0):
                 SheduleImpactFIELD="customfield_14206"  
-                new_issue.update(notify=False,fields={SheduleImpactFIELD: {'value' :   SheduleImpact}})
+                FIELD=SheduleImpactFIELD
+                NAME="Schedule Impact"
+                ExcelValue=SheduleImpact
+                SetSingleSelectionValue(FIELD,NAME,ExcelValue,new_issue,jira)
             else:
                 new_issue.update(notify=False,fields={SheduleImpactFIELD: {"id": "-1"}})
         
@@ -725,6 +712,31 @@ def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME
         raise
         sys.exit(1)
     return new_issue   
+ 
+ 
+# do the setting of the single selection drop down menu value"
+# dogdy way to doit (string includes javascript) 
+def SetSingleSelectionValue(FIELD,NAME,ExcelValue,new_issue,jira):
+
+                #new_issue.update(notify=False,fields={HSEImpactFIELD: {"id" : "26010" }}) # this works, ID from Jira UI (edit single selection ui), code uses meta info for this
+                # goovy listener adds \'s for the string but not problem                
+                regex = r"(.)(>\d<)(.*)"   # just get the >number< part to be used in in (whole string messes the operation
+                match = re.search(regex, ExcelValue)
+                
+                if (match):
+                    hit=match.group(2)
+                    meta = jira.editmeta(new_issue)
+                    #pprint(meta)     
+                    field = None
+                    for field in meta["fields"].values():
+                        if field["name"] == NAME:
+                            break
+                    
+                    value = [v for v in field["allowedValues"] if hit in v["value"]][0] # get id for excel based custom field string , use id to set the new value (string itself is too complicated and do not work)
+                    new_issue.update(notify=False,fields={FIELD: {"id": value["id"]}}) # this works           
+                else:
+                    print "Error: can't decode excel based custom field value:{0}".format(ExcelValue)     
+
     
     
 if __name__ == '__main__':
