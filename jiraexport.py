@@ -44,10 +44,10 @@ CAT="SHIP"
 
 
 # do only one operation for testing purposes
-#ONCE="NO"
-ONCE="YES"
-MAXCOUNTER=5 # number of rounds tbd
-#MAXCOUNTER=0 #do just once
+ONCE="NO"
+#ONCE="YES"
+#MAXCOUNTER=5 # number of rounds tbd
+MAXCOUNTER=0 #do just once
 
 ###########################################################################
 
