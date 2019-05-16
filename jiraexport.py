@@ -643,53 +643,40 @@ def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME
         #TODO FIX ME   *****************************************
         if (ENV =="PROD"):
             HSEImpactFIELD="customfield_14204"  
-            print "HSEImpact:{0}".format(HSEImpact)
-            print "read value:{0}".format(new_issue.fields.customfield_14204)
-            values=new_issue.fields.customfield_14204   
-            values2=str(values).encode('utf-8')    
-            readvalue="<span class=\"amb-tooltip\" style=\"display:inline-block;padding:.25rem .5rem;\" title=\"No injuries/no or slight effect on environment\">1</span><script>AJS.$(\"#customfield_14204-val .amb-tooltip\").tooltip({gravity: \'s\'});</script>"   
+           
             if not(HSEImpact==0):
                 HSEImpactFIELD="customfield_14204"  
-                print "HSEImpact setting with value"
-                temp="\""+HSEImpact+"\""
-                #new_issue.update(notify=False,fields={HSEImpactFIELD: {"value" : readvalue }})
-                #new_issue.update(notify=False,fields={HSEImpactFIELD: {"id" : "26010" }}) # this works
-                
+                #new_issue.update(notify=False,fields={HSEImpactFIELD: {"id" : "26010" }}) # this works, ID from Jira UI (edit single selection ui), code uses meta info for this
+                # goovy listener adds \'s for the string
+                # EXCEL: <span class="amb-tooltip" style="display:inline-block;padding:.25rem .5rem;" title="Fatality(s) and/or permanent disability(s)">5</span><script>AJS.$("#customfield_14226-val .amb-tooltip").tooltip({gravity: 's'});</script>           
+                # META:  <span class="amb-tooltip" style="display:inline-block;padding:.25rem .5rem;" title="Fatality(s) and/or permanent disability(s)">5</span><script>AJS.$("#customfield_14204-val .amb-tooltip").tooltip({gravity: \'s\'});</script>
+                #REPLACED<span class="amb-tooltip" style="display:inline-block;padding:.25rem .5rem;" title="Fatality(s) and/or permanent disability(s)">5</span><script>AJS.$("#customfield_14226-val .amb-tooltip").tooltip({gravity: \'s\'});</script>
                 HSEImpact2=HSEImpact.replace("'s'","\\'s\\'")
                
-                
-                #(.)(>\d<)(.*)
-                regex = r"(.)(>\d<)(.*)"   #TT1400-39 'Logistic plan to do' (Risk Mitigation)
+                regex = r"(.)(>\d<)(.*)"   # just get the >number< part to be used in in (whole string messes the operation
                 match = re.search(regex, HSEImpact)
                 
                 if (match):
                     hit=match.group(2)
-                
-                
-                
-                print "HSEImpact2:{0}".format(HSEImpact2)
-                meta = jira.editmeta(new_issue)
-                pprint(meta)     #"meta:{0}".format(meta)
-                print "HSEImpact2:{0}".format(HSEImpact2)
-                field = None
-                for field in meta["fields"].values():
-                    print "field:{0}".format(field)
-                    if field["name"] == "HSE Impact":
-                        print "field2:{0}".format(field)
-                        break
+                    meta = jira.editmeta(new_issue)
+                    #pprint(meta)     
+                    field = None
+                    for field in meta["fields"].values():
+                        if field["name"] == "HSE Impact":
+                            break
                     
-                # EXCEL: <span class="amb-tooltip" style="display:inline-block;padding:.25rem .5rem;" title="Fatality(s) and/or permanent disability(s)">5</span><script>AJS.$("#customfield_14226-val .amb-tooltip").tooltip({gravity: 's'});</script>           
-                # META:  <span class="amb-tooltip" style="display:inline-block;padding:.25rem .5rem;" title="Fatality(s) and/or permanent disability(s)">5</span><script>AJS.$("#customfield_14204-val .amb-tooltip").tooltip({gravity: \'s\'});</script>
-                #REPLACE <span class="amb-tooltip" style="display:inline-block;padding:.25rem .5rem;" title="Fatality(s) and/or permanent disability(s)">5</span><script>AJS.$("#customfield_14226-val .amb-tooltip").tooltip({gravity: \'s\'});</script>
-                value = [v for v in field["allowedValues"] if hit in v["value"]][0]
-                #value = [v for v in field["allowedValues"] if str(HSEImpact2)==v["value"]][0]
-                new_issue.update(notify=False,fields={HSEImpactFIELD: {"id": value["id"]}}) # this works
-
-                
-                #new_issue.update(notify=False,fields={HSEImpactFIELD: str(values) })
+                    value = [v for v in field["allowedValues"] if hit in v["value"]][0] # get id for excel based custom field string , use id to set the new value (string itself is too complicated and do not work)
+                    new_issue.update(notify=False,fields={HSEImpactFIELD: {"id": value["id"]}}) # this works           
+                else:
+                    print "Error: can't decode excel based custom field value"     
             else:
                 print "HSEImpact setting -1"
                 new_issue.update(notify=False,fields={HSEImpactFIELD: {"id": "-1"}}) 
+            
+            
+            
+            
+            
             
             PROBABILITYFIELD="customfield_14203" 
             if not(PROBABILITY==0):
