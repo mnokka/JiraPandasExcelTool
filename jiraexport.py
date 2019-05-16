@@ -42,9 +42,12 @@ TYPE="RISK"
 CAT="SHIP"
 #CAT="FIN"
 
+
 # do only one operation for testing purposes
 #ONCE="NO"
 ONCE="YES"
+MAXCOUNTER=5 # number of rounds tbd
+#MAXCOUNTER=0 #do just once
 
 ###########################################################################
 
@@ -153,8 +156,8 @@ def main():
     AN=40 #Description
     AB=28 #Mitigation Costs (Keur)
     
- 
-    print "=====>    Internal configuration:{0} , {1} , {2}".format(ENV, TYPE, CAT)
+    COUNTER=0
+    print "=====>    Internal configuration:{0} , {1} , {2}, TESTING ROUNDS TBD:{3} , DO TESTING={4}".format(ENV, TYPE, CAT, MAXCOUNTER, ONCE)
  
     ##############################################################################################
     #Go through main excel sheet for main issue keys (and contents findings)
@@ -465,10 +468,20 @@ def main():
             print "Lost in translation. Cant do want I should do"
                 
         time.sleep(0.7) # prevent jira crashing for script attack
-        if (ONCE=="YES"):
-            print "ONCE testing mode ,stopping now"
-            sys.exit(5) #testing do only once
+        
+        # testing mode checks
+        COUNTER=COUNTER+1
+        if (MAXCOUNTER>0):
+            print "Doing test round:{0}".format(COUNTER)
+        
+        if (ONCE=="YES" and MAXCOUNTER==0):
+                print "ONCE test  mode ,stopping now"
+                sys.exit(5) #testing do only once
+        elif (MAXCOUNTER>0 and COUNTER>MAXCOUNTER):
+                print "Some test rounds mode ,stopping now"
+                sys.exit(5) #testing some rounds
         print "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+       
         #now excel has been prosessed
         
     end = time.clock()
@@ -481,7 +494,7 @@ def main():
 
 
 
-    
+#Create mitigation issue which servers the main risk issue    
 def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,CAT,DueDate):
     
     
@@ -533,10 +546,11 @@ def CreateMitigationIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,US
         sys.exit(1)
     return new_issue    
     
-     
+
+#Create Main Risk Issue which is linked to mitigation issues     
 def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME_ASSIGNEE,DESCRIPTION,MitigationCostsKeur,NEWSTATUS,ENV,DISCIPLINE,TYPE,RiskCost,CAT,TOLINKLIST,LINKS,DueDate,SystemNumber,HSEImpact,PROBABILITY,QualityImpact,SheduleImpact):
     
-    print "=====>    Internal configuration:{0} , {1} , {2}".format(ENV, TYPE, CAT)
+    print "=====>    Internal configuration:{0} , {1} , {2}, TESTING ROUNDS TBD:{3} , DO TESTING={4}".format(ENV, TYPE, CAT, MAXCOUNTER, ONCE)
     print "Discipline:{0} ".format(DISCIPLINE)
     
     TRANSIT="NA"
@@ -643,8 +657,8 @@ def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME
         #TODO FIX ME   *****************************************
         if (ENV =="PROD"):
            
+            HSEImpactFIELD="customfield_14204"
             if not(HSEImpact==0):
-                HSEImpactFIELD="customfield_14204"
                 FIELD=HSEImpactFIELD
                 NAME="HSE Impact"
                 ExcelValue=HSEImpact
@@ -654,9 +668,8 @@ def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME
                 new_issue.update(notify=False,fields={HSEImpactFIELD: {"id": "-1"}}) 
             
             
-
-            if not(PROBABILITY==0):
-                PROBABILITYFIELD="customfield_14203"  
+            PROBABILITYFIELD="customfield_14203"
+            if not(PROBABILITY==0):  
                 FIELD=PROBABILITYFIELD
                 NAME="Probability"
                 ExcelValue=PROBABILITY
@@ -666,9 +679,8 @@ def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME
                 new_issue.update(notify=False,fields={PROBABILITYFIELD: {"id": "-1"}})
         
         
-      
+            QualityImpactFIELD="customfield_14205" 
             if not(QualityImpact==0):
-                QualityImpactFIELD="customfield_14205" 
                 FIELD=QualityImpactFIELD
                 NAME="Quality Impact"
                 ExcelValue=QualityImpact
@@ -677,9 +689,8 @@ def CreateRiskIssue(jira,JIRAPROJECT,SUMMARY,ISSUE_TYPE,PRIORITY,STATUS,USERNAME
                 new_issue.update(notify=False,fields={QualityImpactFIELD: {"id": "-1"}})
         
         
-        
-            if not(SheduleImpact==0):
-                SheduleImpactFIELD="customfield_14206"  
+            SheduleImpactFIELD="customfield_14206"  
+            if not(SheduleImpact==0):  
                 FIELD=SheduleImpactFIELD
                 NAME="Schedule Impact"
                 ExcelValue=SheduleImpact
